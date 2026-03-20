@@ -1,6 +1,8 @@
 import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom"
 import Layout from "./components/Layout"
 import Login from "./pages/Login"
+import Register from "./pages/Register"
+import ForgotPassword from "./pages/ForgotPassword"
 import { useAuth } from "./contexts/AuthContext"
 
 // Temporary mock pages
@@ -22,8 +24,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-500">Page d'inscription — Story 2.2</p></div>} />
-        <Route path="/forgot-password" element={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-500">Réinitialisation mot de passe — Story 2.4</p></div>} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />

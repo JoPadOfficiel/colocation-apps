@@ -33,6 +33,42 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ data: { user: stripPassword(user), colocation } });
 });
 
+app.post('/api/auth/register', (req, res) => {
+  const { name, email, password } = req.body || {};
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Nom, email et mot de passe requis' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Le mot de passe doit faire au moins 8 caractères' });
+  }
+  const exists = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (exists) {
+    return res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
+  }
+  const newUser = {
+    id: genId('user'),
+    name,
+    email: email.toLowerCase(),
+    password,
+    profilePhoto: '',
+    role: 'member',
+    colocationId: 'coloc-1',
+    dietaryConstraints: [],
+  };
+  users.push(newUser);
+  colocation.members.push(newUser.id);
+  res.status(201).json({ data: { user: stripPassword(newUser), colocation } });
+});
+
+app.post('/api/auth/forgot-password', (req, res) => {
+  const { email } = req.body || {};
+  if (!email) {
+    return res.status(400).json({ error: 'Email requis' });
+  }
+  // Mock: always return success
+  res.json({ data: { message: 'Un email de réinitialisation a été envoyé' } });
+});
+
 // Users
 app.get('/api/users', (req, res) => {
   res.json({ data: users.map(stripPassword) });
