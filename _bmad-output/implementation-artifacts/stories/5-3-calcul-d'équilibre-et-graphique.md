@@ -1,13 +1,13 @@
 ---
 title: "Story 5.3 : Calcul d'équilibre et graphique"
 epic: "Epic 5 : Gestion des Finances"
-status: "review"
+status: "done"
 assignee: "Jopad"
 ---
 
 # Story 5.3 : Calcul d'équilibre et graphique
 
-Status: review
+Status: done
 
 ## Story
 
@@ -357,6 +357,11 @@ Claude Sonnet 4.5
 - ✅ Responsive design: table with horizontal scroll, chart adapts to width
 - ✅ All acceptance criteria satisfied
 - ✅ Fixed React hooks error by declaring CustomTooltip outside component
+- ✅ Code review completed with 4 patch fixes applied:
+  - Added floating point precision rounding (Math.round * 100 / 100)
+  - Added date validation in calculateMonthlyData with Invalid Date handling
+  - Added NaN prevention with Number() conversion for amounts
+  - Changed month format from "short" to "long" for better readability
 
 ### File List
 
