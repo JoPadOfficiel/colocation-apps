@@ -25,9 +25,17 @@ function AuthProvider({ children }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     })
-    const json = await res.json()
+    let json
+    try {
+      json = await res.json()
+    } catch {
+      return { success: false, error: "Réponse serveur invalide" }
+    }
     if (!res.ok) {
       return { success: false, error: json.error || "Erreur de connexion" }
+    }
+    if (!json.data?.user) {
+      return { success: false, error: "Données utilisateur manquantes" }
     }
     setUser(json.data.user)
     setColocation(json.data.colocation)

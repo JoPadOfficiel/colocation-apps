@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeOff, Users } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
@@ -8,7 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, user } = useAuth()
+
+  useEffect(() => {
+    if (user) navigate("/dashboard", { replace: true })
+  }, [user, navigate])
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -35,9 +39,10 @@ export default function Login() {
     setError(null)
     if (!validate()) return
 
+    if (loading) return
     setLoading(true)
     try {
-      const result = await login(email, password)
+      const result = await login(email.trim().toLowerCase(), password)
       if (result.success) {
         navigate("/dashboard", { replace: true })
       } else {
@@ -50,10 +55,16 @@ export default function Login() {
     }
   }
 
+  const [joinError, setJoinError] = useState(null)
+
   async function handleJoin(e) {
     e.preventDefault()
-    if (!joinCode.trim()) return
-    // Placeholder pour Story 2.3
+    setJoinError(null)
+    if (!joinCode.trim()) {
+      setJoinError("Veuillez entrer un code d'invitation")
+      return
+    }
+    setJoinError("Fonctionnalité disponible prochainement (Story 2.3)")
   }
 
   return (
@@ -150,15 +161,20 @@ export default function Login() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleJoin} className="flex gap-2">
-                <Input
-                  placeholder="Code : COLO-XXXX-X"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value)}
-                />
-                <Button type="submit" variant="outline">
-                  Rejoindre
-                </Button>
+              <form onSubmit={handleJoin} className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Code : COLO-XXXX-X"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                  />
+                  <Button type="submit" variant="outline">
+                    Rejoindre
+                  </Button>
+                </div>
+                {joinError && (
+                  <p className="text-sm text-amber-600">{joinError}</p>
+                )}
               </form>
             </CardContent>
           </Card>
