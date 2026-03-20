@@ -3,7 +3,7 @@ epic: "Epic 2 : Authentification & Onboarding"
 storyId: "2.1"
 title: "Page de connexion"
 assignee: "Yohan"
-status: backlog
+status: done
 priority: high
 frs: [FR2, FR4, FR5]
 ---
@@ -23,7 +23,15 @@ So that **j'accede a ma colocation**.
 **Then** je suis redirige vers le dashboard
 **And** le formulaire affiche les champs email et password avec toggle visibilite
 **And** un lien "Mot de passe oublie ?" et "Creer un compte" sont visibles
-**And** une section "Rejoindre une colocation existante" avec champ code + bouton "Rejoindre" est affichee
+**And** une section "Rejoindre une colocation existante" avec champ code + bouton "Rejoindre" est affichee (`Login.jsx:L156-180`)
+
+## Code Citations
+
+- **Formulaire de Connexion** : `Login.jsx:L85-154` (Utilisation de Card, CardContent, Input, Button)
+- **Toggle Visibilité Mot de Passe** : `Login.jsx:L110-132` (Toggle Eye/EyeOff avec absolute positioning)
+- **Logique d'Authentification** : `Login.jsx:L37-56` (Utilisation du `login` de `AuthContext`)
+- **Validation Formulaire** : `Login.jsx:L25-35` (Check email Regex et password non-vide)
+- **Section "Rejoindre Colocation"** : `Login.jsx:L156-180` (Formulaire séparé pour Story 2.3)
 
 ## Notes d'Implementation Technique
 

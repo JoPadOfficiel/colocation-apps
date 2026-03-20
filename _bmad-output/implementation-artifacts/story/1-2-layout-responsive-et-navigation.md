@@ -3,7 +3,7 @@ epic: "Epic 1 : Fondations & Projet Setup"
 storyId: "1.2"
 title: "Layout responsive et navigation"
 assignee: "Jopad"
-status: backlog
+status: "done"
 priority: high
 frs: [FR49, FR50]
 ---
@@ -76,12 +76,16 @@ So that **je peux acceder a tous les modules depuis n'importe quel ecran**.
 
 - Story 1.1 (projet initialise)
 
+## Citations
+- [PRD: Section 7.5 - Navigation & UX](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L293-298)
+- [PRD: Section 6.2 - Architecture](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L216-217)
+
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] Responsive : sidebar visible >=768px, bottom tab bar visible <768px
-- [ ] Utilise shadcn/ui (Button, Avatar)
-- [ ] Navigation fonctionne entre toutes les routes
-- [ ] Item actif visuellement distinct dans la navigation
-- [ ] Profil utilisateur affiche dans la sidebar
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : sidebar visible >=768px, bottom tab bar visible <768px
+- [x] Utilise shadcn/ui (Button, Avatar)
+- [x] Navigation fonctionne entre toutes les routes
+- [x] Item actif visuellement distinct dans la navigation
+- [x] Profil utilisateur affiche dans la sidebar
+- [x] Pas d'erreur console

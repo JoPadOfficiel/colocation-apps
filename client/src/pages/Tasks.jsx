@@ -1,11 +1,34 @@
 import { useState, useEffect } from "react"
-import { Plus, Pencil, Trash2, Check, X, Calendar, User } from "lucide-react"
+import { Plus, Pencil, Trash2, Check, Calendar, User, MoreHorizontal, Repeat } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { fetchTasks, createTask, updateTask, deleteTask, fetchUsers } from "@/lib/api"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 const CATEGORIES = ["Cuisine", "Salon", "Salle de bain", "Extérieur", "Courses", "Autre"]
 const RECURRENCES = [
@@ -20,10 +43,12 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
-  const [filter, setFilter] = useState({ status: "all", assignee: "all" })
+  const [filter, setFilter] = useState({ status: "all", assignee: "all", date: "all" })
   const [selectedTasks, setSelectedTasks] = useState([])
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState(null)
 
   // Form state
   const [form, setForm] = useState({
@@ -43,7 +68,13 @@ export default function Tasks() {
   function resetForm() {
     setForm({ title: "", description: "", category: "Autre", assignedTo: user?.id || "", dueDate: "", recurrence: "none" })
     setEditingTask(null)
-    setShowForm(false)
+    setDialogOpen(false)
+  }
+
+  function openCreateDialog() {
+    setForm({ title: "", description: "", category: "Autre", assignedTo: user?.id || "", dueDate: "", recurrence: "none" })
+    setEditingTask(null)
+    setDialogOpen(true)
   }
 
   function startEdit(task) {
@@ -56,7 +87,7 @@ export default function Tasks() {
       recurrence: task.recurrence || "none",
     })
     setEditingTask(task)
-    setShowForm(true)
+    setDialogOpen(true)
   }
 
   async function handleSubmit(e) {
@@ -82,14 +113,21 @@ export default function Tasks() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm("Supprimer cette tâche ?")) return
+  async function confirmDelete() {
+    if (!taskToDelete) return
     try {
-      await deleteTask(id)
-      setTasks((prev) => prev.filter((t) => t.id !== id))
+      await deleteTask(taskToDelete)
+      setTasks((prev) => prev.filter((t) => t.id !== taskToDelete))
     } catch (err) {
       console.error("Delete error:", err)
+    } finally {
+      setTaskToDelete(null)
     }
+  }
+
+  function promptDelete(id) {
+    setTaskToDelete(id)
+    setDeleteConfirmOpen(true)
   }
 
   async function toggleStatus(task) {
@@ -129,6 +167,25 @@ export default function Tasks() {
   const filtered = tasks.filter((t) => {
     if (filter.status !== "all" && t.status !== filter.status) return false
     if (filter.assignee !== "all" && t.assignedTo !== filter.assignee) return false
+    
+    if (filter.date !== "all") {
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+      const due = new Date(t.dueDate)
+      due.setHours(0, 0, 0, 0)
+      
+      if (filter.date === "today") {
+        if (due.getTime() !== now.getTime()) return false
+      } else if (filter.date === "this-week") {
+        const nextWeek = new Date(now)
+        nextWeek.setDate(now.getDate() + 7)
+        if (due < now || due > nextWeek) return false
+      } else if (filter.date === "this-month") {
+        const nextMonth = new Date(now)
+        nextMonth.setMonth(now.getMonth() + 1)
+        if (due < now || due > nextMonth) return false
+      }
+    }
     return true
   })
 
@@ -150,108 +207,165 @@ export default function Tasks() {
   return (
     <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tâches</h1>
-        <Button onClick={() => { resetForm(); setForm((f) => ({ ...f, assignedTo: user?.id || "" })); setShowForm(true) }}>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tâches de la Colocation</h1>
+        <Button onClick={openCreateDialog}>
           <Plus className="w-4 h-4 mr-1" /> NOUVELLE TÂCHE
         </Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        <select
-          className="text-sm border rounded-lg px-3 py-1.5 bg-white"
+        <Select
           value={filter.status}
-          onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value }))}
+          onValueChange={(val) => setFilter((f) => ({ ...f, status: val }))}
         >
-          <option value="all">Tous les statuts</option>
-          <option value="À faire">À faire</option>
-          <option value="En cours">En cours</option>
-          <option value="Terminée">Terminée</option>
-        </select>
-        <select
-          className="text-sm border rounded-lg px-3 py-1.5 bg-white"
+          <SelectTrigger className="w-[180px] bg-white">
+            <SelectValue placeholder="Tous les statuts" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="À faire">À faire</SelectItem>
+            <SelectItem value="En cours">En cours</SelectItem>
+            <SelectItem value="Terminée">Terminée</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
           value={filter.assignee}
-          onChange={(e) => setFilter((f) => ({ ...f, assignee: e.target.value }))}
+          onValueChange={(val) => setFilter((f) => ({ ...f, assignee: val }))}
         >
-          <option value="all">Tous les membres</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>{u.name}</option>
-          ))}
-        </select>
+          <SelectTrigger className="w-[180px] bg-white">
+            <SelectValue placeholder="Tous les membres" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les membres</SelectItem>
+            {users.map((u) => (
+              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filter.date}
+          onValueChange={(val) => setFilter((f) => ({ ...f, date: val }))}
+        >
+          <SelectTrigger className="w-[180px] bg-white">
+            <SelectValue placeholder="Toutes les dates" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les dates</SelectItem>
+            <SelectItem value="today">Aujourd'hui</SelectItem>
+            <SelectItem value="this-week">7 prochains jours</SelectItem>
+            <SelectItem value="this-month">30 prochains jours</SelectItem>
+          </SelectContent>
+        </Select>
 
         {selectedTasks.length > 0 && (
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-sm text-gray-500">{selectedTasks.length} sélectionnée(s)</span>
-            <select
-              className="text-sm border rounded-lg px-3 py-1.5 bg-white"
-              onChange={(e) => { if (e.target.value) bulkReassign(e.target.value); e.target.value = "" }}
-              defaultValue=""
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 px-6 py-3 bg-white/80 backdrop-blur-md border shadow-2xl rounded-full animate-in slide-in-from-bottom-4 duration-300">
+            <span className="text-sm font-medium text-gray-700">{selectedTasks.length} sélectionnée(s)</span>
+            <div className="h-6 w-px bg-gray-200" />
+            <Select
+              onValueChange={(val) => { if (val) bulkReassign(val) }}
             >
-              <option value="" disabled>Déléguer à...</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-[180px] border-none bg-transparent hover:bg-gray-100/50">
+                <SelectValue placeholder="Déléguer à..." />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedTasks([])} className="text-gray-500 hover:text-gray-900">
+              Annuler
+            </Button>
           </div>
         )}
       </div>
 
-      {/* Create/Edit Form */}
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingTask ? "Modifier la tâche" : "Nouvelle tâche"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <Input
-                placeholder="Titre de la tâche"
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                required
-              />
-              <Input
-                placeholder="Description (optionnel)"
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <select
-                  className="text-sm border rounded-lg px-3 py-2 bg-white"
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm() }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingTask ? "Modifier la tâche" : "Nouvelle tâche"}</DialogTitle>
+            <DialogDescription>
+              {editingTask
+                ? "Modifiez les informations de la tâche ci-dessous."
+                : "Remplissez les informations pour créer une nouvelle tâche."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <Input
+              placeholder="Titre de la tâche"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              required
+            />
+            <Input
+              placeholder="Description (optionnel)"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Catégorie</label>
+                <Select
                   value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                  onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}
                 >
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <select
-                  className="text-sm border rounded-lg px-3 py-2 bg-white"
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Assigné à</label>
+                <Select
                   value={form.assignedTo}
-                  onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
+                  onValueChange={(val) => setForm((f) => ({ ...f, assignedTo: val }))}
                 >
-                  <option value="">Assigner à...</option>
-                  {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Assigner à..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Non assigné</SelectItem>
+                    {users.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Date d'échéance</label>
                 <Input
                   type="date"
                   value={form.dueDate}
                   onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
                 />
-                <select
-                  className="text-sm border rounded-lg px-3 py-2 bg-white"
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Récurrence</label>
+                <Select
                   value={form.recurrence}
-                  onChange={(e) => setForm((f) => ({ ...f, recurrence: e.target.value }))}
+                  onValueChange={(val) => setForm((f) => ({ ...f, recurrence: val }))}
                 >
-                  {RECURRENCES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Récurrence" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit">{editingTask ? "Enregistrer" : "Créer"}</Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Annuler</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={resetForm}>Annuler</Button>
+              <Button type="submit">{editingTask ? "Enregistrer" : "Créer la tâche"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Task Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -267,7 +381,7 @@ export default function Tasks() {
                 userMap={userMap}
                 onToggle={() => toggleStatus(task)}
                 onEdit={() => startEdit(task)}
-                onDelete={() => handleDelete(task.id)}
+                onDelete={() => promptDelete(task.id)}
                 selected={selectedTasks.includes(task.id)}
                 onSelect={() => toggleSelect(task.id)}
               />
@@ -288,7 +402,7 @@ export default function Tasks() {
                 userMap={userMap}
                 onToggle={() => toggleStatus(task)}
                 onEdit={() => startEdit(task)}
-                onDelete={() => handleDelete(task.id)}
+                onDelete={() => promptDelete(task.id)}
                 selected={selectedTasks.includes(task.id)}
                 onSelect={() => toggleSelect(task.id)}
               />
@@ -304,19 +418,41 @@ export default function Tasks() {
           <CardTitle className="text-lg">Statistiques par membre</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <span className="text-sm text-gray-700">{u.name}</span>
-                <div className="flex gap-3 text-sm">
-                  <span className="text-gray-500">{stats[u.id]?.total || 0} assignées</span>
-                  <span className="text-green-600 font-medium">{stats[u.id]?.done || 0} terminées</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {users.map((u) => {
+              const userStats = stats[u.id] || { total: 0, done: 0 }
+              const percentage = userStats.total > 0 ? Math.round((userStats.done / userStats.total) * 100) : 0
+              return (
+                <div key={u.id} className="p-4 rounded-xl border bg-gray-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-900">{u.name}</span>
+                    <Badge variant="outline" className="bg-white">{percentage}%</Badge>
+                  </div>
+                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-1000"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{userStats.total} assignées</span>
+                    <span className="text-green-600 font-medium">{userStats.done} terminées</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Supprimer la tâche ?"
+        description="Cette action est irréversible. La tâche sera définitivement supprimée."
+        onConfirm={confirmDelete}
+        confirmText="Supprimer"
+        variant="destructive"
+      />
     </div>
   )
 }
@@ -326,13 +462,12 @@ function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelec
   const date = task.dueDate ? new Date(task.dueDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""
 
   return (
-    <Card className={`${selected ? "ring-2 ring-primary" : ""} ${isDone ? "opacity-60" : ""}`}>
+    <Card className={`group relative ring-offset-background transition-all hover:shadow-md ${selected ? "ring-2 ring-primary" : ""} ${isDone ? "opacity-60 bg-gray-50/50" : ""}`}>
       <CardContent className="py-3 px-4">
         <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={selected}
-            onChange={onSelect}
+            onCheckedChange={onSelect}
             className="mt-1 shrink-0"
             aria-label="Sélectionner"
           />
@@ -340,20 +475,23 @@ function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelec
             {isDone ? (
               <Check className="w-5 h-5 text-green-500" />
             ) : (
-              <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+              <div className="w-5 h-5 rounded-full border-2 border-gray-300 hover:border-primary transition-colors cursor-pointer" />
             )}
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-xs">{task.category}</Badge>
+              <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-white/50">{task.category}</Badge>
               {task.recurrence !== "none" && (
-                <Badge variant="secondary" className="text-xs">🔄 {task.recurrence}</Badge>
+                <Badge variant="secondary" className="text-[10px] font-normal gap-1">
+                  <Repeat className="w-2.5 h-2.5" />
+                  {task.recurrence === "daily" ? "Quotidien" : task.recurrence === "weekly" ? "Hebdo" : "Mensuel"}
+                </Badge>
               )}
             </div>
-            <p className={`text-sm font-medium ${isDone ? "line-through text-gray-400" : "text-gray-900"}`}>
+            <p className={`text-sm font-semibold leading-snug ${isDone ? "line-through text-gray-400" : "text-gray-900"}`}>
               {task.title}
             </p>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+            <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
               {date && (
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" /> {date}
@@ -366,13 +504,24 @@ function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelec
               )}
             </div>
           </div>
-          <div className="flex gap-1 shrink-0">
-            <button onClick={onEdit} className="p-1 text-gray-400 hover:text-blue-500" aria-label="Modifier">
-              <Pencil className="w-4 h-4" />
-            </button>
-            <button onClick={onDelete} className="p-1 text-gray-400 hover:text-red-500" aria-label="Supprimer">
-              <Trash2 className="w-4 h-4" />
-            </button>
+          <div className="shrink-0 self-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="icon-sm" className="h-8 w-8 hover:bg-gray-100 rounded-full">
+                    <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="w-3 h-3" /> Modifier
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+                  <Trash2 className="w-3 h-3" /> Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardContent>
