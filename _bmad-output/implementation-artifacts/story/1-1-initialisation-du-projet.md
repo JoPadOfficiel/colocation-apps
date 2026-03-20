@@ -47,6 +47,11 @@ So that l'équipe peut commencer à développer immédiatement.
 - `server/index.js`
 - `.gitignore`
 
+## Citations
+- [PRD: Section 6.1 - Stack technique](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L197-208)
+- [PRD: Section 6.2 - Architecture](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L210-217)
+- [Architecture: Section 1.1 - Structure Globale](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/architecture.md)
+
 ## Dev Notes
 - Follow PRD / Tech Spec for architectural boundaries.
 - The `client` runs on port 5173, `server` on 3001.
