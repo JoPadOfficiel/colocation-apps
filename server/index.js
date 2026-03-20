@@ -87,6 +87,23 @@ app.get('/api/colocation', (req, res) => {
   res.json({ data: colocation });
 });
 
+app.post('/api/colocation', (req, res) => {
+  const { name } = req.body || {};
+  if (!name) return res.status(400).json({ error: 'Nom requis' });
+  const code = `COLO-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 3).toUpperCase()}`;
+  Object.assign(colocation, { name, invitationCode: code });
+  res.status(201).json({ data: colocation });
+});
+
+app.post('/api/colocation/join', (req, res) => {
+  const { code } = req.body || {};
+  if (!code) return res.status(400).json({ error: 'Code requis' });
+  if (colocation.invitationCode.toUpperCase() !== code.toUpperCase()) {
+    return res.status(404).json({ error: 'Code d\'invitation invalide' });
+  }
+  res.json({ data: colocation });
+});
+
 // Tasks CRUD
 app.get('/api/tasks', (req, res) => {
   res.json({ data: tasks });
