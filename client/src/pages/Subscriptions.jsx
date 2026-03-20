@@ -145,7 +145,7 @@ export default function Subscriptions() {
       <div className="bg-[#eef6fd] border border-[#4799eb]/20 text-[#0e141b] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-white p-3 rounded-full text-[#4799eb] shadow-sm">
-            <span className="material-symbols-outlined block text-2xl">account_balance_wallet</span>
+            <span className="material-symbols-outlined block text-2xl">wallet</span>
           </div>
           <div>
             <p className="text-sm font-medium text-[#4e7397]">Coût Mensuel Total</p>

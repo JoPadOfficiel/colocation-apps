@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { colocation, users, tasks, finances, subscriptions, recipes, shoppingList } = require('./data/mockData');
+const db = require('./data/db');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -9,6 +9,15 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 }));
 app.use(express.json());
+
+// Load data from persistent storage
+let colocation = db.load('colocation');
+let users = db.load('users');
+let tasks = db.load('tasks');
+let finances = db.load('finances');
+let subscriptions = db.load('subscriptions');
+let recipes = db.load('recipes');
+let shoppingList = db.load('shoppingList');
 
 let nextId = 100;
 const genId = (prefix) => `${prefix}-${nextId++}`;
@@ -57,6 +66,8 @@ app.post('/api/auth/register', (req, res) => {
   };
   users.push(newUser);
   colocation.members.push(newUser.id);
+  db.save('users', users);
+  db.save('colocation', colocation);
   res.status(201).json({ data: { user: stripPassword(newUser), colocation } });
 });
 
@@ -79,6 +90,7 @@ app.put('/api/users/:id', (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Utilisateur non trouvé' });
   const { id, password, role, ...allowed } = req.body;
   Object.assign(users[idx], allowed);
+  db.save('users', users);
   res.json({ data: stripPassword(users[idx]) });
 });
 
@@ -92,6 +104,7 @@ app.post('/api/colocation', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Nom requis' });
   const code = `COLO-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 3).toUpperCase()}`;
   Object.assign(colocation, { name, invitationCode: code });
+  db.save('colocation', colocation);
   res.status(201).json({ data: colocation });
 });
 
@@ -112,6 +125,7 @@ app.get('/api/tasks', (req, res) => {
 app.post('/api/tasks', (req, res) => {
   const task = { id: genId('task'), colocationId: 'coloc-1', ...req.body };
   tasks.push(task);
+  db.save('tasks', tasks);
   res.status(201).json({ data: task });
 });
 
@@ -119,6 +133,7 @@ app.put('/api/tasks/:id', (req, res) => {
   const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
   Object.assign(tasks[idx], req.body);
+  db.save('tasks', tasks);
   res.json({ data: tasks[idx] });
 });
 
@@ -126,6 +141,7 @@ app.delete('/api/tasks/:id', (req, res) => {
   const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
   const [removed] = tasks.splice(idx, 1);
+  db.save('tasks', tasks);
   res.json({ data: removed });
 });
 
@@ -137,6 +153,7 @@ app.get('/api/finances', (req, res) => {
 app.post('/api/finances', (req, res) => {
   const finance = { id: genId('fin'), colocationId: 'coloc-1', ...req.body };
   finances.push(finance);
+  db.save('finances', finances);
   res.status(201).json({ data: finance });
 });
 
@@ -144,6 +161,7 @@ app.put('/api/finances/:id', (req, res) => {
   const idx = finances.findIndex((f) => f.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Dépense non trouvée' });
   Object.assign(finances[idx], req.body);
+  db.save('finances', finances);
   res.json({ data: finances[idx] });
 });
 
@@ -151,6 +169,7 @@ app.delete('/api/finances/:id', (req, res) => {
   const idx = finances.findIndex((f) => f.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Dépense non trouvée' });
   const [removed] = finances.splice(idx, 1);
+  db.save('finances', finances);
   res.json({ data: removed });
 });
 
@@ -162,6 +181,7 @@ app.get('/api/recipes', (req, res) => {
 app.post('/api/recipes', (req, res) => {
   const recipe = { id: genId('recipe'), colocationId: 'coloc-1', ...req.body };
   recipes.push(recipe);
+  db.save('recipes', recipes);
   res.status(201).json({ data: recipe });
 });
 
@@ -169,6 +189,7 @@ app.put('/api/recipes/:id', (req, res) => {
   const idx = recipes.findIndex((r) => r.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Recette non trouvée' });
   Object.assign(recipes[idx], req.body);
+  db.save('recipes', recipes);
   res.json({ data: recipes[idx] });
 });
 
@@ -176,6 +197,7 @@ app.delete('/api/recipes/:id', (req, res) => {
   const idx = recipes.findIndex((r) => r.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Recette non trouvée' });
   const [removed] = recipes.splice(idx, 1);
+  db.save('recipes', recipes);
   res.json({ data: removed });
 });
 
@@ -187,6 +209,7 @@ app.get('/api/shopping-list', (req, res) => {
 app.post('/api/shopping-list', (req, res) => {
   const item = { id: genId('shop'), colocationId: 'coloc-1', ...req.body };
   shoppingList.push(item);
+  db.save('shoppingList', shoppingList);
   res.status(201).json({ data: item });
 });
 
@@ -194,6 +217,7 @@ app.put('/api/shopping-list/:id', (req, res) => {
   const idx = shoppingList.findIndex((s) => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Article non trouvé' });
   Object.assign(shoppingList[idx], req.body);
+  db.save('shoppingList', shoppingList);
   res.json({ data: shoppingList[idx] });
 });
 
@@ -201,6 +225,7 @@ app.delete('/api/shopping-list/:id', (req, res) => {
   const idx = shoppingList.findIndex((s) => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Article non trouvé' });
   const [removed] = shoppingList.splice(idx, 1);
+  db.save('shoppingList', shoppingList);
   res.json({ data: removed });
 });
 
@@ -212,6 +237,7 @@ app.get('/api/subscriptions', (req, res) => {
 app.post('/api/subscriptions', (req, res) => {
   const sub = { id: genId('sub'), colocationId: 'coloc-1', ...req.body };
   subscriptions.push(sub);
+  db.save('subscriptions', subscriptions);
   res.status(201).json({ data: sub });
 });
 
@@ -219,6 +245,7 @@ app.put('/api/subscriptions/:id', (req, res) => {
   const idx = subscriptions.findIndex((s) => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Abonnement non trouvé' });
   Object.assign(subscriptions[idx], req.body);
+  db.save('subscriptions', subscriptions);
   res.json({ data: subscriptions[idx] });
 });
 
@@ -226,6 +253,7 @@ app.delete('/api/subscriptions/:id', (req, res) => {
   const idx = subscriptions.findIndex((s) => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Abonnement non trouvé' });
   const [removed] = subscriptions.splice(idx, 1);
+  db.save('subscriptions', subscriptions);
   res.json({ data: removed });
 });
 
