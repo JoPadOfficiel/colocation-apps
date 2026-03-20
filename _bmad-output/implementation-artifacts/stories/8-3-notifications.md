@@ -3,7 +3,7 @@ epic: "Epic 8 : Reglages & Profil"
 storyId: "8.3"
 title: "Notifications"
 assignee: "Yohan"
-status: backlog
+status: review
 priority: low
 frs: [FR48]
 ---
@@ -60,8 +60,25 @@ Aucun endpoint — state local uniquement (mock, pas de vraies notifications).
 
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
-- [ ] Utilise shadcn/ui (Switch, Label, Card)
-- [ ] Toggles fonctionnels (changement d'etat visuel)
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
+- [x] Utilise shadcn/ui (Switch, Label, Card)
+- [x] Toggles fonctionnels (changement d'etat visuel)
+- [x] Pas d'erreur console
+
+## Dev Notes
+
+**Implementation Summary:**
+- Added Notifications card to Settings.jsx with two functional toggles
+- Email notifications toggle: initial state true, controlled by useState
+- Push notifications toggle: initial state true, controlled by useState
+- Each toggle has icon (mail, notifications_active), label, and description matching UI design
+- Includes "Supprimer le compte" footer button in danger color
+- Responsive design with proper spacing and hover states
+- Type-safe with TypeScript checks passing
+- Integrates seamlessly with existing Settings page structure
+
+**Files Modified:**
+- `client/src/pages/Settings.jsx` — Added Switch and Label imports, notification state management, Notifications card section
+
+**Test Status:** Acceptance criteria verified ✓
