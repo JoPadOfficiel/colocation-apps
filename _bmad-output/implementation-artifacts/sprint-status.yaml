@@ -52,8 +52,8 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2: Authentification & Onboarding (Yohan)
-  epic-2: backlog
-  2-1-page-de-connexion: backlog
+  epic-2: in-progress
+  2-1-page-de-connexion: review
   2-2-page-dinscription: backlog
   2-3-creer-ou-rejoindre-une-colocation: backlog
   2-4-reinitialisation-mot-de-passe: backlog
