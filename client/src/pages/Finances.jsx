@@ -121,8 +121,9 @@ export default function Finances() {
     if (!isFinite(montant)) {
       return "0,00 €";
     }
-    // Format français avec virgule comme séparateur décimal et espace insécable
-    return `${montant.toFixed(2).replace(".", ",")} €`;
+    // Arrondir à 2 décimales et format français avec virgule comme séparateur décimal
+    const rounded = Math.round(montant * 100) / 100;
+    return `${rounded.toFixed(2).replace(".", ",")} €`;
   };
 
   const formatDate = (dateString) => {
@@ -143,20 +144,29 @@ export default function Finances() {
   const calculateBalance = (financesData, members) => {
     if (!members || members.length === 0) return [];
 
-    const totalDepenses = financesData.reduce((sum, f) => sum + (f.amount || 0), 0);
-    const partParPersonne = totalDepenses / members.length;
+    // Validation et conversion des montants
+    const totalDepenses = financesData.reduce((sum, f) => {
+      const amount = Number(f.amount) || 0;
+      return sum + amount;
+    }, 0);
+    const partParPersonne = Math.round((totalDepenses / members.length) * 100) / 100;
 
     const balances = members.map(member => {
       const montantPaye = financesData
         .filter(f => f.paidBy === member.id)
-        .reduce((sum, f) => sum + (f.amount || 0), 0);
+        .reduce((sum, f) => {
+          const amount = Number(f.amount) || 0;
+          return sum + amount;
+        }, 0);
       
-      const solde = montantPaye - partParPersonne;
+      // Arrondir à 2 décimales pour éviter les erreurs de précision
+      const montantPayeRounded = Math.round(montantPaye * 100) / 100;
+      const solde = Math.round((montantPayeRounded - partParPersonne) * 100) / 100;
       
       return {
         memberId: member.id,
         memberName: member.name,
-        montantPaye,
+        montantPaye: montantPayeRounded,
         partEquitable: partParPersonne,
         solde,
         status: solde > 0.01 ? "créance" : solde < -0.01 ? "dette" : "équilibré"
@@ -174,14 +184,23 @@ export default function Finances() {
     const monthlyMap = {};
     
     financesData.forEach(finance => {
+      // Validation de la date
       const date = new Date(finance.date);
+      if (isNaN(date.getTime())) {
+        console.warn(`Date invalide ignorée: ${finance.date}`);
+        return; // Skip cette entrée
+      }
+      
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString("fr-FR", { month: "short" });
+      const monthLabel = date.toLocaleDateString("fr-FR", { month: "long" });
+      
+      // Validation du montant
+      const amount = Number(finance.amount) || 0;
       
       if (!monthlyMap[monthKey]) {
         monthlyMap[monthKey] = { month: monthLabel, amount: 0 };
       }
-      monthlyMap[monthKey].amount += finance.amount;
+      monthlyMap[monthKey].amount += amount;
     });
     
     // Convertir en array et trier par date, prendre les 6 derniers mois
