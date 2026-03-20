@@ -23,7 +23,10 @@ app.get('/api', (req, res) => {
 // Auth
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body || {};
-  const user = users.find((u) => u.email === email && u.password === password);
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email et mot de passe requis' });
+  }
+  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
   if (!user) {
     return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
   }
