@@ -4,10 +4,10 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import ForgotPassword from "./pages/ForgotPassword"
 import Onboarding from "./pages/Onboarding"
+import Dashboard from "./pages/Dashboard"
 import { useAuth } from "./contexts/AuthContext"
 
 // Temporary mock pages
-const Dashboard = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Tableau de bord</h1><p className="text-gray-600">Bienvenue sur ColocApp !</p></div>;
 const Tasks = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Tâches</h1><p className="text-gray-600">Gestion des tâches.</p></div>;
 const Food = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Alimentation</h1><p className="text-gray-600">Liste de courses et menus.</p></div>;
 const Finances = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Finances</h1><p className="text-gray-600">Suivi des dépenses communes.</p></div>;
