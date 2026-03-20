@@ -1,0 +1,92 @@
+[
+  {
+    "id": "fin-1",
+    "title": "Courses Carrefour",
+    "amount": 67.3,
+    "type": "shopping",
+    "date": "2026-03-15T14:00:00Z",
+    "paidBy": "user-1",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-2",
+    "title": "Loyer Mars",
+    "amount": 450,
+    "type": "rent",
+    "date": "2026-03-01T09:00:00Z",
+    "paidBy": "user-1",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-3",
+    "title": "Électricité EDF",
+    "amount": 85.2,
+    "type": "utility",
+    "date": "2026-03-05T10:00:00Z",
+    "paidBy": "user-2",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-4",
+    "title": "Courses Lidl",
+    "amount": 42.1,
+    "type": "shopping",
+    "date": "2026-03-10T16:30:00Z",
+    "paidBy": "user-3",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-5",
+    "title": "Soirée pizza",
+    "amount": 35,
+    "type": "entertainment",
+    "date": "2026-03-08T20:00:00Z",
+    "paidBy": "user-2",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-6",
+    "title": "Internet Orange",
+    "amount": 39.99,
+    "type": "utility",
+    "date": "2026-03-03T08:00:00Z",
+    "paidBy": "user-1",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-7",
+    "title": "Produits ménagers",
+    "amount": 28.5,
+    "type": "shopping",
+    "date": "2026-03-12T11:00:00Z",
+    "paidBy": "user-3",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-8",
+    "title": "Courses marché",
+    "amount": 31.8,
+    "type": "shopping",
+    "date": "2026-03-16T10:00:00Z",
+    "paidBy": "user-2",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-9",
+    "title": "Eau",
+    "amount": 22.4,
+    "type": "utility",
+    "date": "2026-03-07T09:00:00Z",
+    "paidBy": "user-1",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-10",
+    "title": "Ciné entre colocs",
+    "amount": 27,
+    "type": "entertainment",
+    "date": "2026-03-14T19:30:00Z",
+    "paidBy": "user-3",
+    "colocationId": "coloc-1"
+  }
+]

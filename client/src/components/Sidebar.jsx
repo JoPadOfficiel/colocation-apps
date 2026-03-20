@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, CheckSquare, Utensils, CreditCard, Settings, LogOut, User } from 'lucide-react';
+import { Home, CheckSquare, Utensils, CreditCard, Settings, LogOut, User, RefreshCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const NAV_ITEMS = [
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { label: 'Tâches', path: '/tasks', icon: CheckSquare },
   { label: 'Alimentation', path: '/food', icon: Utensils },
   { label: 'Finances', path: '/finances', icon: CreditCard },
+  { label: 'Abonnements', path: '/subscriptions', icon: RefreshCcw },
   { label: 'Réglages', path: '/settings', icon: Settings },
 ];
 

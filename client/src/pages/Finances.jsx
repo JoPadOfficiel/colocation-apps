@@ -11,6 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchFinances, createFinance, updateFinance, deleteFinance } from "@/lib/api";
 import FinancesChart from "@/components/FinancesChart";
 
 export default function Finances() {
@@ -86,24 +87,11 @@ export default function Finances() {
       return;
     }
 
-    const fetchFinances = async () => {
+    const loadFinances = async () => {
       try {
-        const res = await fetch("/api/finances");
-        
-        // Vérification du statut HTTP
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        
-        const json = await res.json();
-        
-        // Validation de la structure de la réponse
-        if (!json.data || !Array.isArray(json.data)) {
-          throw new Error("Format de réponse invalide");
-        }
-        
-        setFinances(json.data);
-        calculateMetrics(json.data);
+        const data = await fetchFinances();
+        setFinances(data);
+        calculateMetrics(data);
         
       } catch (error) {
         console.error("Erreur lors du chargement des finances:", error);
@@ -113,7 +101,7 @@ export default function Finances() {
       }
     };
 
-    fetchFinances();
+    loadFinances();
   }, [colocation, user]);
 
   const formatMontant = (montant) => {
@@ -295,42 +283,17 @@ export default function Finances() {
         colocationId: colocation.id
       };
 
-      let res;
       if (editingExpense) {
-        // Update
-        res = await fetch(`/api/finances/${editingExpense.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(expenseData)
-        });
+        await updateFinance(editingExpense.id, expenseData);
       } else {
-        // Create
-        res = await fetch("/api/finances", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(expenseData)
-        });
-      }
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        await createFinance(expenseData);
       }
 
       // Refetch finances
-      const fetchRes = await fetch("/api/finances");
-      if (!fetchRes.ok) {
-        throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
-      }
-      
-      const json = await fetchRes.json();
-      if (json.data && Array.isArray(json.data)) {
-        setFinances(json.data);
-        // Réinitialiser la pagination à la page 1 après modification
-        setCurrentPage(1);
-        // Utiliser la fonction centralisée pour recalculer les métriques
-        calculateMetrics(json.data);
-      }
-
+      const data = await fetchFinances();
+      setFinances(data);
+      setCurrentPage(1);
+      calculateMetrics(data);
       handleCloseDialog();
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
@@ -350,35 +313,22 @@ export default function Finances() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/finances/${expenseToDelete.id}`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
+      await deleteFinance(expenseToDelete.id);
 
       // Refetch finances
-      const fetchRes = await fetch("/api/finances");
-      if (!fetchRes.ok) {
-        throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
+      const data = await fetchFinances();
+      setFinances(data);
+
+      // Ajuster la pagination si la page actuelle devient vide
+      const newTotalPages = Math.ceil(data.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      } else if (data.length === 0) {
+        setCurrentPage(1);
       }
-      
-      const json = await fetchRes.json();
-      if (json.data && Array.isArray(json.data)) {
-        setFinances(json.data);
-        
-        // Ajuster la pagination si la page actuelle devient vide
-        const newTotalPages = Math.ceil(json.data.length / itemsPerPage);
-        if (currentPage > newTotalPages && newTotalPages > 0) {
-          setCurrentPage(newTotalPages);
-        } else if (json.data.length === 0) {
-          setCurrentPage(1);
-        }
-        
-        // Utiliser la fonction centralisée pour recalculer les métriques
-        calculateMetrics(json.data);
-      }
+
+      // Utiliser la fonction centralisée pour recalculer les métriques
+      calculateMetrics(data);
 
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
