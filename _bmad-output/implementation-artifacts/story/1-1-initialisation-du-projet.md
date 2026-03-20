@@ -1,7 +1,7 @@
 ---
 title: "Story 1.1 : Initialisation du projet"
 epic: "Epic 1 : Fondations & Projet Setup"
-status: "review"
+status: "done"
 assignee: "Jopad"
 ---
 

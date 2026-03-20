@@ -1,7 +1,7 @@
 ---
 title: "Story 1.3 : AuthContext et Mock Data"
 epic: "Epic 1 : Fondations & Projet Setup"
-status: "review"
+status: "done"
 assignee: "Jopad"
 ---
 

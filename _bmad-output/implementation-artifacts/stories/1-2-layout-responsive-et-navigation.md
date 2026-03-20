@@ -2,7 +2,7 @@
 epic: 1
 story: 1.2
 title: "Layout responsive et navigation"
-status: review
+status: done
 ---
 
 # Story 1.2 : Layout responsive et navigation
