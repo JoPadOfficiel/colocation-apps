@@ -11,8 +11,8 @@ async function request(url, options = {}) {
   return json.data
 }
 
-export function loginUser() {
-  return request("/api/auth/login", { method: "POST" })
+export function loginUser(email, password) {
+  return request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
 }
 
 export function fetchUsers() {
