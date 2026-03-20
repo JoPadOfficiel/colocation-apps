@@ -43,6 +43,30 @@ function AuthProvider({ children }) {
     return { success: true }
   }
 
+  async function register(name, email, password) {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    })
+    let json
+    try {
+      json = await res.json()
+    } catch {
+      return { success: false, error: "Réponse serveur invalide" }
+    }
+    if (!res.ok) {
+      return { success: false, error: json.error || "Erreur d'inscription" }
+    }
+    if (!json.data?.user) {
+      return { success: false, error: "Données utilisateur manquantes" }
+    }
+    setUser(json.data.user)
+    setColocation(json.data.colocation || null)
+    sessionStorage.setItem("colocapp_user", JSON.stringify(json.data))
+    return { success: true }
+  }
+
   function logout() {
     setUser(null)
     setColocation(null)
@@ -50,7 +74,7 @@ function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, colocation, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, colocation, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )
