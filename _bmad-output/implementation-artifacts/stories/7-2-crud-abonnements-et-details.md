@@ -3,7 +3,7 @@ epic: "Epic 7 : Gestion des Abonnements"
 storyId: "7.2"
 title: "CRUD abonnements et details"
 assignee: "Yohan"
-status: backlog
+status: review
 priority: high
 frs: [FR40, FR41, FR42, FR43]
 ---
@@ -70,11 +70,17 @@ So that **les abonnements de la colocation sont bien geres**.
 
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
-- [ ] Utilise shadcn/ui (Dialog, Input, Select, Button, Badge)
-- [ ] Cout total recalcule apres ajout/suppression
-- [ ] Places disponibles affichees
-- [ ] Identifiants masquables/affichables
-- [ ] Pop-up confirmation suppression
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
+- [x] Utilise shadcn/ui (Dialog, Input, Select, Button, Badge)
+- [x] Cout total recalcule apres ajout/suppression
+- [x] Places disponibles affichees
+- [x] Identifiants masquables/affichables
+- [x] Pop-up confirmation suppression
+- [x] Pas d'erreur console
+
+## Change Log
+- Ajout fonctionnel du CRUD complet des abonnements.
+- Utilisation des composants shadcn (Dialog, Input, Select, Button, Badge).
+- Implementation de la visualisation et copie des mots de passe.
+- Tests valides et code integre avec succes.
