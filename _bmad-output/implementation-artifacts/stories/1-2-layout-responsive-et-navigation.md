@@ -1,39 +1,91 @@
 ---
-epic: 1
-story: 1.2
+epic: "Epic 1 : Fondations & Projet Setup"
+storyId: "1.2"
 title: "Layout responsive et navigation"
-status: done
+assignee: "Jopad"
+status: "done"
+priority: high
+frs: [FR49, FR50]
 ---
 
 # Story 1.2 : Layout responsive et navigation
 
-## Objective
+## User Story
+
 As a **colocataire**,
 I want **une navigation avec sidebar sur desktop et bottom tab bar sur mobile**,
-So that **je peux accéder à tous les modules depuis n'importe quel écran**.
+So that **je peux acceder a tous les modules depuis n'importe quel ecran**.
 
-## Acceptance Criteria
-- **Given** je suis sur n'importe quelle page
-  **When** la largeur d'écran est ≥768px
-  **Then** une sidebar s'affiche avec : Accueil, Tâches, Alimentation, Finances, Réglages + profil utilisateur + logout
-- **Given** je suis sur n'importe quelle page
-  **When** la largeur d'écran est <768px
-  **Then** une bottom tab bar s'affiche avec : Accueil, Tâches, Food, Finances, Plus
+## Criteres d'Acceptation
 
-## Tasks / Subtasks
-1. Mettre en place la structure du `Layout` principal.
-2. Créer le composant `Sidebar` pour les versions desktop (affichage conditionnel md:flex).
-3. Créer le composant `BottomNav` pour la version mobile (affichage conditionnel md:hidden).
-4. Adapter `App.jsx` pour wrapper les routes de l'application avec ce `Layout`.
+**Given** je suis sur n'importe quelle page
+**When** la largeur d'ecran est >=768px
+**Then** une sidebar s'affiche avec : Accueil, Taches, Alimentation, Finances, Reglages + profil utilisateur + logout
 
-## Dev Notes
-- Vérifier `tech-spec.md` et `ui-design.md` pour l'aspect visuel (couleurs : #4799eb pour le focus/primary).
-- Utiliser `lucide-react` pour les icônes (Home, CheckSquare, Utensils, CreditCard, Settings).
-- Utiliser `react-router-dom` pour le routage (Link, useLocation pour le style actif).
-- Structure de base `min-h-screen bg-gray-50 flex flex-col md:flex-row`.
+**Given** je suis sur n'importe quelle page
+**When** la largeur d'ecran est <768px
+**Then** une bottom tab bar s'affiche avec : Accueil, Taches, Food, Finances, Plus
 
-## File List
-- `client/src/components/Layout.jsx` (nouveau)
-- `client/src/components/Sidebar.jsx` (nouveau)
-- `client/src/components/BottomNav.jsx` (nouveau)
-- `client/src/App.jsx` (modifier)
+## Notes d'Implementation Technique
+
+### Fichiers a Creer/Modifier
+
+- `client/src/components/Layout.jsx` — Composant wrapper, detecte breakpoint 768px, affiche Sidebar ou BottomNav
+- `client/src/components/Sidebar.jsx` — Navigation desktop
+- `client/src/components/BottomNav.jsx` — Navigation mobile
+- `client/src/App.jsx` — React Router avec toutes les routes, wrappees par Layout
+
+### Routes a Configurer (React Router)
+
+| Route | Page | Label Sidebar | Label Mobile |
+|-------|------|--------------|-------------|
+| `/dashboard` | Dashboard.jsx | Accueil | Accueil |
+| `/tasks` | Tasks.jsx | Taches | Taches |
+| `/food` | Food.jsx | Alimentation | Food |
+| `/finances` | Finances.jsx | Finances | Finances |
+| `/settings` | Settings.jsx | Reglages | (via Plus) |
+| `/subscriptions` | Subscriptions.jsx | — | (via Plus) |
+| `/login` | Login.jsx | — | — |
+| `/register` | Register.jsx | — | — |
+
+### Composants Utilises
+
+- shadcn/ui : `Button`, `Avatar`
+- Material Symbols : `dashboard`, `check_circle`, `shopping_cart`, `attach_money`, `settings`, `logout`, `apartment`, `more_horiz`, `restaurant`
+- Tailwind responsive : `hidden md:flex`, `flex md:hidden`
+
+### Donnees Mock
+
+- Utilisateur connecte depuis `useAuth()` : nom, email, avatar (pour la sidebar)
+
+### Reference Design
+
+**Sidebar desktop (ui-design.md Ecran 3) :**
+- Background : `surface` (#ffffff)
+- Logo "ColocApp" avec icone `apartment`
+- 5 items navigation avec icones Material Symbols
+- Item actif : background `primary-light` (#eef6fd), texte `primary` (#4799eb)
+- Profil utilisateur en bas : Avatar + nom + email + icone `logout`
+
+**Bottom tab bar mobile (ui-design.md section Navigation Mobile) :**
+- 5 onglets : Accueil, Taches, Food, Finances, Plus
+- Icone active : couleur `primary`
+- "Plus" ouvre un menu avec Abonnements et Reglages
+
+## Dependances
+
+- Story 1.1 (projet initialise)
+
+## Citations
+- [PRD: Section 7.5 - Navigation & UX](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L293-298)
+- [PRD: Section 6.2 - Architecture](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L216-217)
+
+## Definition of Done
+
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : sidebar visible >=768px, bottom tab bar visible <768px
+- [x] Utilise shadcn/ui (Button, Avatar)
+- [x] Navigation fonctionne entre toutes les routes
+- [x] Item actif visuellement distinct dans la navigation
+- [x] Profil utilisateur affiche dans la sidebar
+- [x] Pas d'erreur console
