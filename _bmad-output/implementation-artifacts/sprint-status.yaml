@@ -67,11 +67,11 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: Gestion des Tâches (Luis-Manuel)
-  epic-4: backlog
-  4-1-liste-des-taches-et-creation: backlog
-  4-2-modification-suppression-et-changement-de-statut: backlog
-  4-3-recurrence-filtres-et-assignation: backlog
-  4-4-statistiques-et-bulk-action: backlog
+  epic-4: in-progress
+  4-1-liste-des-taches-et-creation: review
+  4-2-modification-suppression-et-changement-de-statut: review
+  4-3-recurrence-filtres-et-assignation: review
+  4-4-statistiques-et-bulk-action: review
   epic-4-retrospective: optional
 
   # Epic 5: Gestion des Finances (Jopad)
