@@ -11,6 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import FinancesChart from "@/components/FinancesChart";
 
 export default function Finances() {
   const { user, colocation } = useAuth();
@@ -137,6 +138,62 @@ export default function Finances() {
     const member = colocation?.members?.find(m => m.id === userId);
     return member?.name || "Inconnu";
   };
+
+  // Calcul de l'équilibre financier entre colocataires
+  const calculateBalance = (financesData, members) => {
+    if (!members || members.length === 0) return [];
+
+    const totalDepenses = financesData.reduce((sum, f) => sum + (f.amount || 0), 0);
+    const partParPersonne = totalDepenses / members.length;
+
+    const balances = members.map(member => {
+      const montantPaye = financesData
+        .filter(f => f.paidBy === member.id)
+        .reduce((sum, f) => sum + (f.amount || 0), 0);
+      
+      const solde = montantPaye - partParPersonne;
+      
+      return {
+        memberId: member.id,
+        memberName: member.name,
+        montantPaye,
+        partEquitable: partParPersonne,
+        solde,
+        status: solde > 0.01 ? "créance" : solde < -0.01 ? "dette" : "équilibré"
+      };
+    });
+
+    return balances;
+  };
+
+  // Calcul des données mensuelles pour le graphique
+  const calculateMonthlyData = (financesData) => {
+    if (!financesData || financesData.length === 0) return [];
+
+    // Grouper par mois
+    const monthlyMap = {};
+    
+    financesData.forEach(finance => {
+      const date = new Date(finance.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString("fr-FR", { month: "short" });
+      
+      if (!monthlyMap[monthKey]) {
+        monthlyMap[monthKey] = { month: monthLabel, amount: 0 };
+      }
+      monthlyMap[monthKey].amount += finance.amount;
+    });
+    
+    // Convertir en array et trier par date, prendre les 6 derniers mois
+    return Object.keys(monthlyMap)
+      .sort()
+      .slice(-6)
+      .map(key => monthlyMap[key]);
+  };
+
+  // Calculer les données pour l'affichage
+  const balances = calculateBalance(finances, colocation?.members || []);
+  const monthlyData = calculateMonthlyData(finances);
 
   // Pagination logic avec protection contre division par zéro
   const totalPages = finances.length > 0 ? Math.ceil(finances.length / itemsPerPage) : 1;
@@ -501,6 +558,78 @@ export default function Finances() {
                 </Button>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Tableau d'équilibre entre colocataires */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-[#0e141b]">
+            Équilibre entre colocataires
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Membre</TableHead>
+                  <TableHead className="text-right">Montant payé</TableHead>
+                  <TableHead className="text-right">Part équitable</TableHead>
+                  <TableHead className="text-right">Solde</TableHead>
+                  <TableHead>Statut</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {balances.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-[#4e7397]">
+                      Aucun membre dans la colocation
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  balances.map(balance => (
+                    <TableRow key={balance.memberId}>
+                      <TableCell className="font-medium">{balance.memberName}</TableCell>
+                      <TableCell className="text-right">{formatMontant(balance.montantPaye)}</TableCell>
+                      <TableCell className="text-right">{formatMontant(balance.partEquitable)}</TableCell>
+                      <TableCell className={`text-right font-semibold ${
+                        balance.solde > 0.01 ? "text-[#22c55e]" : balance.solde < -0.01 ? "text-[#ef4444]" : "text-[#4e7397]"
+                      }`}>
+                        {balance.solde > 0.01 ? "+" : ""}{formatMontant(Math.abs(balance.solde))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={balance.solde > 0.01 ? "default" : balance.solde < -0.01 ? "destructive" : "secondary"}
+                          className={balance.solde > 0.01 ? "bg-[#22c55e] hover:bg-[#22c55e]/90" : ""}
+                        >
+                          {balance.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Graphique des dépenses mensuelles */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-[#0e141b]">
+            Dépenses mensuelles
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {monthlyData.length === 0 ? (
+            <div className="flex items-center justify-center h-[300px]">
+              <p className="text-[#4e7397]">Aucune donnée à afficher</p>
+            </div>
+          ) : (
+            <FinancesChart data={monthlyData} />
           )}
         </CardContent>
       </Card>
