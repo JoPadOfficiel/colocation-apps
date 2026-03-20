@@ -186,6 +186,17 @@ export default function Food() {
     setRecipeDialogOpen(false)
   }
 
+  function toggleConstraintInForm(diet) {
+    setRecipeForm(prev => {
+      const current = prev.dietaryConstraints || []
+      if (current.includes(diet)) {
+        return { ...prev, dietaryConstraints: current.filter(c => c !== diet) }
+      } else {
+        return { ...prev, dietaryConstraints: [...current, diet] }
+      }
+    })
+  }
+
   function openCreateRecipe() {
     setEditingRecipe(null)
     setRecipeForm({
@@ -631,6 +642,23 @@ export default function Food() {
                     onChange={(e) => setRecipeForm(f => ({ ...f, ingredients: e.target.value }))}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Contraintes alimentaires</label>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {COMMON_DIETS.map(diet => (
+                      <Button
+                        key={diet}
+                        type="button"
+                        variant={recipeForm.dietaryConstraints?.includes(diet) ? "default" : "outline"}
+                        size="sm"
+                        className="text-[10px] h-7 px-2"
+                        onClick={() => toggleConstraintInForm(diet)}
+                      >
+                        {diet}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={resetRecipeForm}>Annuler</Button>
