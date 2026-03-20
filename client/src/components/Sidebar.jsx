@@ -1,6 +1,6 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, CheckSquare, Utensils, CreditCard, Settings, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NAV_ITEMS = [
   { label: 'Accueil', path: '/dashboard', icon: Home },
@@ -11,6 +11,8 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar() {
+  const { user, logout } = useAuth();
+
   return (
     <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
       <div className="p-6">
@@ -42,12 +44,15 @@ export default function Sidebar() {
             <User className="w-4 h-4" />
           </div>
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium text-gray-900 truncate">Jopad</p>
-            <p className="text-xs text-gray-500 truncate">Admin</p>
+            <p className="text-sm font-medium text-gray-900 truncate">{user?.name ?? ''}</p>
+            <p className="text-xs text-gray-500 truncate">{user?.email ?? ''}</p>
           </div>
         </div>
         
-        <button className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors">
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+        >
           <LogOut className="w-5 h-5" />
           Déconnexion
         </button>
