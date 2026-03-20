@@ -22,7 +22,11 @@ app.get('/api', (req, res) => {
 
 // Auth
 app.post('/api/auth/login', (req, res) => {
-  const user = users[0]; // Thomas Durand par défaut
+  const { email, password } = req.body || {};
+  const user = users.find((u) => u.email === email && u.password === password);
+  if (!user) {
+    return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+  }
   res.json({ data: { user: stripPassword(user), colocation } });
 });
 

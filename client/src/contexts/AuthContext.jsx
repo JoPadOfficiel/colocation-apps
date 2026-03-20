@@ -8,30 +8,41 @@ function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/auth/login", { method: "POST" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((json) => {
-        setUser(json.data.user)
-        setColocation(json.data.colocation)
-      })
-      .catch((err) => {
-        console.error("Auth loading failed:", err)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    const saved = sessionStorage.getItem("colocapp_user")
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        setUser(data.user)
+        setColocation(data.colocation)
+      } catch {}
+    }
+    setLoading(false)
   }, [])
+
+  async function login(email, password) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      return { success: false, error: json.error || "Erreur de connexion" }
+    }
+    setUser(json.data.user)
+    setColocation(json.data.colocation)
+    sessionStorage.setItem("colocapp_user", JSON.stringify(json.data))
+    return { success: true }
+  }
 
   function logout() {
     setUser(null)
     setColocation(null)
+    sessionStorage.removeItem("colocapp_user")
   }
 
   return (
-    <AuthContext.Provider value={{ user, colocation, loading, logout }}>
+    <AuthContext.Provider value={{ user, colocation, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
