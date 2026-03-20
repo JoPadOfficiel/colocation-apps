@@ -3,7 +3,7 @@ epic: "Epic 6 : Alimentation & Recettes"
 storyId: "6.3"
 title: "Liste de courses et contraintes alimentaires"
 assignee: "Luis-Manuel"
-status: backlog
+status: review
 priority: high
 frs: [FR37, FR38]
 ---
