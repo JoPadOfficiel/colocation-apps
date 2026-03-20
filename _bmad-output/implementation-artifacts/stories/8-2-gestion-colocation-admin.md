@@ -3,7 +3,7 @@ epic: "Epic 8 : Reglages & Profil"
 storyId: "8.2"
 title: "Gestion de la colocation (admin)"
 assignee: "Yohan"
-status: backlog
+status: review
 priority: medium
 frs: [FR45, FR46, FR47]
 ---
@@ -66,9 +66,17 @@ So that **je peux gerer qui fait partie de la colocation**.
 
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
-- [ ] Utilise shadcn/ui (Card, Badge, Button, Avatar)
-- [ ] Code copiable via clic (navigator.clipboard)
-- [ ] Section visible uniquement pour les admins
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
+- [x] Utilise shadcn/ui (Card, Badge, Button, Avatar)
+- [x] Code copiable via clic (navigator.clipboard)
+- [x] Section visible uniquement pour les admins
+- [x] Pas d'erreur console
+
+## Dev Agent Record
+
+- Modified: `client/src/pages/Settings.jsx` — section "Ma Colocation" ajoutée après section Profil
+- Pattern: `user.role === "admin"` pour visibilité, `colocation.invitationCode` depuis AuthContext, `fetchUsers()` pour liste membres
+- `navigator.clipboard.writeText()` avec feedback visuel "Copié !" (2s)
+- Bouton "Inviter un colocataire" réutilise `handleCopy` (copie le code dans le presse-papier)
+- No new dependencies required
