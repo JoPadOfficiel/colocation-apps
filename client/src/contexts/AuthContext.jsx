@@ -67,6 +67,18 @@ function AuthProvider({ children }) {
     return { success: true }
   }
 
+  function updateColocation(coloc) {
+    setColocation(coloc)
+    const saved = sessionStorage.getItem("colocapp_user")
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        data.colocation = coloc
+        sessionStorage.setItem("colocapp_user", JSON.stringify(data))
+      } catch {}
+    }
+  }
+
   function logout() {
     setUser(null)
     setColocation(null)
@@ -74,7 +86,7 @@ function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, colocation, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, colocation, loading, login, register, updateColocation, logout }}>
       {children}
     </AuthContext.Provider>
   )
