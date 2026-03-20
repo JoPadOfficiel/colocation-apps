@@ -6,7 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
-import { fetchSubscriptions } from "../lib/api";
+import { fetchSubscriptions, createSubscription, updateSubscription, deleteSubscription } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 // Fallback data if API fails
@@ -91,9 +91,14 @@ export default function Subscriptions() {
     setIsDetailsOpen(true);
   };
 
-  const handleDelete = () => {
-    if (currentSub) {
+  const handleDelete = async () => {
+    if (!currentSub) return;
+    try {
+      await deleteSubscription(currentSub.id);
       setSubscriptions(subscriptions.filter(s => s.id !== currentSub.id));
+      setIsConfirmOpen(false);
+    } catch (err) {
+      console.error("Delete error:", err);
     }
   };
 
@@ -107,27 +112,32 @@ export default function Subscriptions() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    if (currentSub) {
-      // Edit
-      setSubscriptions(subscriptions.map(s => 
-        s.id === currentSub.id 
-          ? { ...s, ...formData, costMonthly: Number(formData.costMonthly) } 
-          : s
-      ));
-    } else {
-      // Add
-      const newSub = {
-        id: Date.now().toString(),
-        icon: "stars",
-        ...formData,
-        costMonthly: Number(formData.costMonthly)
-      };
-      setSubscriptions([...subscriptions, newSub]);
+    try {
+      if (currentSub) {
+        // Edit
+        const updated = await updateSubscription(currentSub.id, {
+          ...formData,
+          costMonthly: Number(formData.costMonthly)
+        });
+        setSubscriptions(subscriptions.map(s =>
+          s.id === currentSub.id ? updated : s
+        ));
+      } else {
+        // Add
+        const created = await createSubscription({
+          ...formData,
+          costMonthly: Number(formData.costMonthly),
+          icon: "stars"
+        });
+        setSubscriptions([...subscriptions, created]);
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error("Save error:", err);
     }
-    setIsDialogOpen(false);
   };
 
   return (

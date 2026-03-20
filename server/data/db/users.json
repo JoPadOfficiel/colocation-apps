@@ -1,0 +1,36 @@
+[
+  {
+    "id": "user-1",
+    "name": "Thomas Durand",
+    "email": "thomas@coloc.fr",
+    "password": "password123",
+    "profilePhoto": "",
+    "role": "admin",
+    "colocationId": "coloc-1",
+    "dietaryConstraints": []
+  },
+  {
+    "id": "user-2",
+    "name": "Léa Martin",
+    "email": "lea@coloc.fr",
+    "password": "password123",
+    "profilePhoto": "",
+    "role": "member",
+    "colocationId": "coloc-1",
+    "dietaryConstraints": [
+      "végétarienne"
+    ]
+  },
+  {
+    "id": "user-3",
+    "name": "Marc Lefebvre",
+    "email": "marc@coloc.fr",
+    "password": "password123",
+    "profilePhoto": "",
+    "role": "member",
+    "colocationId": "coloc-1",
+    "dietaryConstraints": [
+      "sans gluten"
+    ]
+  }
+]

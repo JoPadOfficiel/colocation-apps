@@ -506,13 +506,11 @@ function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelec
           </div>
           <div className="shrink-0 self-center">
             <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm" className="h-8 w-8 hover:bg-gray-100 rounded-full">
-                    <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                  </Button>
-                }
-              />
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="h-8 w-8 hover:bg-gray-100 rounded-full">
+                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                </Button>
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onEdit}>
                   <Pencil className="w-3 h-3" /> Modifier

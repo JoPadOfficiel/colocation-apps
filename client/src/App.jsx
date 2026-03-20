@@ -10,6 +10,7 @@ import Subscriptions from "./pages/Subscriptions"
 import Finances from "./pages/Finances"
 import Food from "./pages/Food"
 import Settings from "./pages/Settings"
+import NotificationsTest from "./pages/NotificationsTest"
 import { useAuth } from "./contexts/AuthContext"
 
 function ProtectedRoute({ children }) {
@@ -27,6 +28,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/notifications-test" element={<NotificationsTest />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />

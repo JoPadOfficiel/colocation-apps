@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, CheckSquare, Utensils, CreditCard, Menu } from 'lucide-react';
+import { Home, CheckSquare, Utensils, CreditCard, Menu, RefreshCcw } from 'lucide-react';
 
 const BOTTOM_NAV_ITEMS = [
   { label: 'Accueil', path: '/dashboard', icon: Home },
   { label: 'Tâches', path: '/tasks', icon: CheckSquare },
+  { label: 'Abonnements', path: '/subscriptions', icon: RefreshCcw },
   { label: 'Food', path: '/food', icon: Utensils },
   { label: 'Finances', path: '/finances', icon: CreditCard },
   { label: 'Plus', path: '/settings', icon: Menu },
