@@ -1,116 +1,82 @@
 ---
-title: "Story 2.1 : Page de connexion"
 epic: "Epic 2 : Authentification & Onboarding"
-status: "review"
+storyId: "2.1"
+title: "Page de connexion"
 assignee: "Yohan"
+status: done
+priority: high
+frs: [FR2, FR4, FR5]
 ---
 
 # Story 2.1 : Page de connexion
 
-Status: review
+## User Story
 
-## Story
+As a **visiteur**,
+I want **me connecter avec mon email et mot de passe**,
+So that **j'accede a ma colocation**.
 
-As a visiteur,
-I want me connecter avec mon email et mot de passe,
-so that j'accède à ma colocation.
+## Criteres d'Acceptation
 
-## Acceptance Criteria
+**Given** je suis sur `/login`
+**When** je saisis un email et mot de passe valides et clique "SE CONNECTER"
+**Then** je suis redirige vers le dashboard
+**And** le formulaire affiche les champs email et password avec toggle visibilite
+**And** un lien "Mot de passe oublie ?" et "Creer un compte" sont visibles
+**And** une section "Rejoindre une colocation existante" avec champ code + bouton "Rejoindre" est affichee (`Login.jsx:L156-180`)
 
-1. **Given** je suis sur `/login`, **When** je saisis un email et mot de passe valides et clique "SE CONNECTER", **Then** je suis redirigé vers le dashboard.
-2. **And** le formulaire affiche les champs email et password avec toggle visibilité.
-3. **And** un lien "Mot de passe oublié ?" et "Créer un compte" sont visibles.
-4. **And** une section "Rejoindre une colocation existante" avec champ code + bouton "Rejoindre" est affichée.
-5. **And** la page `/login` n'a PAS de sidebar/bottom nav (page pleine, hors Layout).
+## Code Citations
 
-## Tasks / Subtasks
+- **Formulaire de Connexion** : `Login.jsx:L85-154` (Utilisation de Card, CardContent, Input, Button)
+- **Toggle Visibilité Mot de Passe** : `Login.jsx:L110-132` (Toggle Eye/EyeOff avec absolute positioning)
+- **Logique d'Authentification** : `Login.jsx:L37-56` (Utilisation du `login` de `AuthContext`)
+- **Validation Formulaire** : `Login.jsx:L25-35` (Check email Regex et password non-vide)
+- **Section "Rejoindre Colocation"** : `Login.jsx:L156-180` (Formulaire séparé pour Story 2.3)
 
-- [x] **Task 1 : Créer la page Login.jsx** (AC: #1, #2, #3, #4, #5)
-  - [x] Créer `client/src/pages/Login.jsx`
-  - [x] Formulaire avec champs email et password
-  - [x] Toggle visibilité password (icône Eye/EyeOff)
-  - [x] Bouton "SE CONNECTER" pleine largeur, style primary
-  - [x] Liens "Mot de passe oublié ?" et "Créer un compte" (liens vers /forgot-password et /register)
-  - [x] Section "Rejoindre une colocation existante" avec champ code + bouton "Rejoindre"
-  - [x] Validation client : email format, password non vide
-  - [x] État loading sur le bouton pendant la requête
-  - [x] Affichage erreurs (email/password invalides, erreur serveur)
+## Notes d'Implementation Technique
 
-- [x] **Task 2 : Étendre AuthContext avec login()** (AC: #1)
-  - [x] Ajouter fonction `login(email, password)` dans AuthProvider
-  - [x] La fonction appelle POST `/api/auth/login` avec les credentials
-  - [x] Met à jour user + colocation dans le state
-  - [x] Retourne success/error pour le composant appelant
-  - [x] Exposer `login` dans la value du context
+### Fichiers a Creer/Modifier
 
-- [x] **Task 3 : Modifier le mock login côté serveur** (AC: #1)
-  - [x] Modifier POST `/api/auth/login` pour vérifier email/password contre mockData
-  - [x] Retourner 401 `{ error: "Email ou mot de passe incorrect" }` si invalide
-  - [x] Retourner 200 `{ data: { user, colocation } }` si valide (sans password)
+- `client/src/pages/Login.jsx` — Page de connexion complete
+- `client/src/App.jsx` — Ajouter route `/login`
 
-- [x] **Task 4 : Ajouter route /login dans App.jsx** (AC: #5)
-  - [x] Importer Login dans `client/src/App.jsx`
-  - [x] Ajouter `<Route path="/login" element={<Login />} />` HORS du Layout
-  - [x] Créer dossier `client/src/pages/` si inexistant
+### Endpoints API
 
-- [x] **Task 5 : Responsive et polish** (AC: #2, #5)
-  - [x] Desktop : formulaire max-w-md centré, fond bg-gray-50
-  - [x] Mobile : formulaire pleine largeur avec padding
-  - [x] Logo "ColocApp" en haut de la page
+- `POST /api/auth/login` — Body: `{ email, password }` — Reponse: `{ data: { user, colocation } }`
 
-## Dev Notes
+### Composants Utilises
 
-### Patterns obligatoires
-- **shadcn/ui** : utiliser `<Button>`, `<Input>`, `<Card>` existants
-- **Fetch natif** via `fetch()`, pas d'axios
-- **Tailwind classes** uniquement, pas de CSS custom
-- **lucide-react** pour les icônes (Eye, EyeOff, Users)
-- La page login est HORS du `<Layout />` — pas de sidebar
+- shadcn/ui : `Button`, `Input`, `Card`, `CardHeader`, `CardContent`
+- Material Symbols : `visibility`, `visibility_off`, `group_add`
 
-### Intégration AuthContext
-Le AuthContext actuel auto-login au mount. Pour Story 2.1 :
-- Ajouter `login(email, password)` au context
-- Supprimer l'auto-login du useEffect (le login sera explicite)
-- Après login réussi, `useNavigate('/dashboard')`
+### Donnees Mock
 
-### Mock Login (serveur)
-Le endpoint POST `/api/auth/login` existe déjà mais retourne toujours users[0].
-Modifier pour vérifier email+password contre les users mockés.
+- Login reussi si email = "thomas@coloc.fr" et password quelconque (>=1 char)
+- Erreur si email inconnu ou champs vides
 
-### Utilisateurs mock disponibles
-| Email | Password | Role |
-|-------|----------|------|
-| thomas@coloc.fr | password123 | admin |
-| lea@coloc.fr | password123 | member |
-| marc@coloc.fr | password123 | member |
+### Reference Design
 
-### Structure
-```
-client/src/
-├── pages/
-│   └── Login.jsx          ← NOUVEAU
-├── contexts/
-│   └── AuthContext.jsx     ← MODIFIER (ajouter login())
-├── App.jsx                 ← MODIFIER (route /login)
-server/
-└── index.js                ← MODIFIER (login avec vérification)
-```
+**Ecran 1 — Connexion (ui-design.md) :**
+- Header : logo "ColocManager" + nav (Accueil, Fonctionnalites, Tarifs) + bouton "S'inscrire"
+- Formulaire centre sur fond `bg-light` (#f6f7f8)
+- Champ Email (type email, placeholder "Email")
+- Champ Mot de passe (type password, toggle visibility_off/visibility)
+- Bouton "SE CONNECTER" : full-width, couleur `primary` (#4799eb)
+- Lien "Mot de passe oublie ?" sous le formulaire
+- Lien "Nouveau ici ? Creer un compte" → `/register`
+- Section "Rejoindre une colocation existante" : icone `group_add`, champ code, bouton "Rejoindre"
+- Footer : "(c) 2023 ColocManager. Tous droits reserves."
 
-### References
-- [Source: _bmad-output/planning-artifacts/epics.md — Epic 2, Story 2.1]
-- [Source: _bmad-output/planning-artifacts/prd.md — FR2, FR4]
-- [Source: _bmad-output/planning-artifacts/ui-design.md — Écran 1 Login]
+## Dependances
 
-## Dev Agent Record
+- Story 1.1 (projet initialise)
+- Story 1.3 (AuthContext + mock data)
 
-### Agent Model Used
+## Definition of Done
 
-### Debug Log References
-
-### Completion Notes List
-
-### File List
-- `client/src/pages/Login.jsx` (nouveau)
-- `client/src/contexts/AuthContext.jsx` (modifier)
-- `client/src/App.jsx` (modifier)
-- `server/index.js` (modifier)
+- [ ] Tous les criteres d'acceptation passent
+- [ ] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
+- [ ] Utilise shadcn/ui (Card, Input, Button)
+- [ ] Donnees mock depuis AuthContext
+- [ ] Toggle visibilite mot de passe fonctionnel
+- [ ] Pas d'erreur console
