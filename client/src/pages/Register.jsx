@@ -8,11 +8,11 @@ import { Card, CardContent } from "@/components/ui/card"
 
 export default function Register() {
   const navigate = useNavigate()
-  const { register, user } = useAuth()
+  const { register, user, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    if (user) navigate("/dashboard", { replace: true })
-  }, [user, navigate])
+    if (!authLoading && user) navigate("/dashboard", { replace: true })
+  }, [user, authLoading, navigate])
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")

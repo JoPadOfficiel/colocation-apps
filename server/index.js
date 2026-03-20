@@ -77,8 +77,9 @@ app.get('/api/users', (req, res) => {
 app.put('/api/users/:id', (req, res) => {
   const idx = users.findIndex((u) => u.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-  Object.assign(users[idx], req.body);
-  res.json({ data: users[idx] });
+  const { id, password, role, ...allowed } = req.body;
+  Object.assign(users[idx], allowed);
+  res.json({ data: stripPassword(users[idx]) });
 });
 
 // Colocation

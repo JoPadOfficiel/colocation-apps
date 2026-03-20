@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -65,11 +64,16 @@ export default function ForgotPassword() {
                   <p className="text-sm text-gray-600">
                     Vérifiez votre boîte de réception (et vos spams).
                   </p>
-                  <Link to="/login">
-                    <Button variant="outline" className="w-full mt-4">
-                      Retour à la connexion
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setSent(false)}>
+                      Réessayer
                     </Button>
-                  </Link>
+                    <Link to="/login" className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        Retour à la connexion
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
