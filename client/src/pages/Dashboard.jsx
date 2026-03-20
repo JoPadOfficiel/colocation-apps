@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Wallet, CheckCircle, ShoppingCart, CreditCard, Plus } from "lucide-react"
+import { Wallet, CheckCircle, ShoppingCart, CreditCard, Plus, TrendingUp, Clock } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { fetchTasks, fetchFinances, fetchShoppingList, fetchSubscriptions } from "@/lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { fetchTasks, fetchFinances, fetchShoppingList, fetchSubscriptions, fetchUsers } from "@/lib/api"
 
 function WidgetCard({ icon: Icon, iconColor, title, value, badge, badgeColor, onClick }) {
   return (
@@ -34,16 +34,156 @@ function WidgetCard({ icon: Icon, iconColor, title, value, badge, badgeColor, on
   )
 }
 
+function ExpenseChart({ finances }) {
+  const byType = {}
+  finances.forEach((f) => {
+    byType[f.type] = (byType[f.type] || 0) + f.amount
+  })
+  const entries = Object.entries(byType).sort((a, b) => b[1] - a[1])
+  const max = Math.max(...entries.map(([, v]) => v), 1)
+  const typeLabels = { shopping: "Courses", rent: "Loyer", utility: "Services", entertainment: "Sorties" }
+  const typeColors = { shopping: "bg-blue-500", rent: "bg-purple-500", utility: "bg-amber-500", entertainment: "bg-green-500" }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <TrendingUp className="w-5 h-5 text-blue-600" />
+          Dépenses par catégorie
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {entries.map(([type, amount]) => (
+            <div key={type} className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">{typeLabels[type] || type}</span>
+                <span className="font-medium">{amount.toFixed(2)} €</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${typeColors[type] || "bg-gray-400"}`}
+                  style={{ width: `${(amount / max) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-sm text-gray-500 mt-4">
+          Total : {finances.reduce((sum, f) => sum + f.amount, 0).toFixed(2)} €
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function RecentActivity({ finances, tasks, users }) {
+  const userMap = {}
+  users.forEach((u) => { userMap[u.id] = u.name })
+
+  const activities = [
+    ...finances.map((f) => ({
+      id: f.id,
+      text: `${userMap[f.paidBy] || "Quelqu'un"} a ajouté "${f.title}" (${f.amount.toFixed(2)} €)`,
+      date: new Date(f.date),
+      type: "finance",
+    })),
+    ...tasks.filter((t) => t.status === "Terminée").map((t) => ({
+      id: t.id,
+      text: `${userMap[t.assignedTo] || "Quelqu'un"} a terminé "${t.title}"`,
+      date: new Date(t.dueDate),
+      type: "task",
+    })),
+  ]
+    .sort((a, b) => b.date - a.date)
+    .slice(0, 3)
+
+  function timeAgo(date) {
+    const diff = Date.now() - date.getTime()
+    const days = Math.floor(diff / 86400000)
+    if (days > 0) return `il y a ${days}j`
+    const hours = Math.floor(diff / 3600000)
+    if (hours > 0) return `il y a ${hours}h`
+    return "à l'instant"
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Clock className="w-5 h-5 text-gray-600" />
+          Activités récentes
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {activities.length === 0 ? (
+          <p className="text-sm text-gray-500">Aucune activité récente</p>
+        ) : (
+          <div className="space-y-3">
+            {activities.map((a) => (
+              <div key={a.id} className="flex items-start gap-3">
+                <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${a.type === "finance" ? "bg-blue-500" : "bg-green-500"}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-700 truncate">{a.text}</p>
+                  <p className="text-xs text-gray-400">{timeAgo(a.date)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function BalanceTable({ finances, users }) {
+  const totals = {}
+  users.forEach((u) => { totals[u.id] = 0 })
+  const totalAll = finances.reduce((s, f) => s + f.amount, 0)
+  const perPerson = totalAll / (users.length || 1)
+  finances.forEach((f) => {
+    if (totals[f.paidBy] !== undefined) totals[f.paidBy] += f.amount
+  })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Équilibre des dépenses</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {users.map((u) => {
+            const paid = totals[u.id] || 0
+            const balance = paid - perPerson
+            return (
+              <div key={u.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <span className="text-sm text-gray-700">{u.name}</span>
+                <div className="text-right">
+                  <span className="text-sm text-gray-500 mr-3">payé : {paid.toFixed(2)} €</span>
+                  <span className={`text-sm font-medium ${balance >= 0 ? "text-green-600" : "text-red-500"}`}>
+                    {balance >= 0 ? "+" : ""}{balance.toFixed(2)} €
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <p className="text-xs text-gray-400 mt-3">Part équitable : {perPerson.toFixed(2)} € par personne</p>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user, colocation } = useAuth()
-  const [data, setData] = useState({ tasks: [], finances: [], shopping: [], subscriptions: [] })
+  const [data, setData] = useState({ tasks: [], finances: [], shopping: [], subscriptions: [], users: [] })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([fetchTasks(), fetchFinances(), fetchShoppingList(), fetchSubscriptions()])
-      .then(([tasks, finances, shopping, subscriptions]) => {
-        setData({ tasks, finances, shopping, subscriptions })
+    Promise.all([fetchTasks(), fetchFinances(), fetchShoppingList(), fetchSubscriptions(), fetchUsers()])
+      .then(([tasks, finances, shopping, subscriptions, users]) => {
+        setData({ tasks, finances, shopping, subscriptions, users })
       })
       .catch((err) => console.error("Dashboard load error:", err))
       .finally(() => setLoading(false))
@@ -119,6 +259,10 @@ export default function Dashboard() {
           />
         </div>
       )}
+
+      {!loading && <ExpenseChart finances={data.finances} />}
+      {!loading && <RecentActivity finances={data.finances} tasks={data.tasks} users={data.users} />}
+      {!loading && <BalanceTable finances={data.finances} users={data.users} />}
     </div>
   )
 }
