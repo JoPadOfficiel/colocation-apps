@@ -3,7 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Finances() {
   const { user, colocation } = useAuth();
@@ -16,6 +23,24 @@ export default function Finances() {
   const [mesDettes, setMesDettes] = useState(0);
   const [onMeDoit, setOnMeDoit] = useState(0);
   const [tendance, setTendance] = useState(0);
+
+  // Dialog states
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    amount: "",
+    date: "",
+    paidBy: ""
+  });
 
   useEffect(() => {
     // Validation précoce des dépendances
@@ -93,6 +118,186 @@ export default function Finances() {
     return `${montant.toFixed(2).replace(".", ",")} €`;
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const getUserName = (userId) => {
+    const member = colocation?.members?.find(m => m.id === userId);
+    return member?.name || "Inconnu";
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(finances.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedExpenses = finances.slice(startIndex, endIndex);
+
+  const handlePrevious = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  // CRUD handlers
+  const handleOpenDialog = (expense = null) => {
+    if (expense) {
+      setEditingExpense(expense);
+      setFormData({
+        title: expense.title,
+        amount: expense.amount.toString(),
+        date: expense.date,
+        paidBy: expense.paidBy
+      });
+    } else {
+      setEditingExpense(null);
+      setFormData({
+        title: "",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        paidBy: user?.id || ""
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingExpense(null);
+    setFormData({ title: "", amount: "", date: "", paidBy: "" });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.title || !formData.amount || !formData.date || !formData.paidBy) {
+      alert("Tous les champs sont requis");
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Le montant doit être supérieur à 0");
+      return;
+    }
+
+    try {
+      const expenseData = {
+        title: formData.title,
+        amount: amount,
+        date: formData.date,
+        paidBy: formData.paidBy,
+        type: "expense",
+        colocationId: colocation.id
+      };
+
+      let res;
+      if (editingExpense) {
+        // Update
+        res = await fetch(`/api/finances/${editingExpense.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(expenseData)
+        });
+      } else {
+        // Create
+        res = await fetch("/api/finances", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(expenseData)
+        });
+      }
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      // Refetch finances
+      const fetchRes = await fetch("/api/finances");
+      if (!fetchRes.ok) {
+        throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
+      }
+      
+      const json = await fetchRes.json();
+      if (json.data && Array.isArray(json.data)) {
+        setFinances(json.data);
+        
+        // Recalcul des métriques
+        const nombreColocataires = colocation.members?.length || 0;
+        if (nombreColocataires > 0) {
+          const totalDepenses = json.data.reduce((sum, f) => sum + (f.amount || 0), 0);
+          const partParPersonne = totalDepenses / nombreColocataires;
+          const mesDepenses = json.data
+            .filter(f => f.paidBy === user.id)
+            .reduce((sum, f) => sum + (f.amount || 0), 0);
+          
+          const balance = mesDepenses - partParPersonne;
+          setMesDettes(balance < 0 ? Math.abs(balance) : 0);
+          setOnMeDoit(balance > 0 ? balance : 0);
+        }
+      }
+
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
+      alert("Erreur lors de la sauvegarde de la dépense");
+    }
+  };
+
+  const handleDelete = (expense) => {
+    setExpenseToDelete(expense);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!expenseToDelete) return;
+
+    try {
+      const res = await fetch(`/api/finances/${expenseToDelete.id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      // Refetch finances
+      const fetchRes = await fetch("/api/finances");
+      if (!fetchRes.ok) {
+        throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
+      }
+      
+      const json = await fetchRes.json();
+      if (json.data && Array.isArray(json.data)) {
+        setFinances(json.data);
+        
+        // Recalcul des métriques
+        const nombreColocataires = colocation.members?.length || 0;
+        if (nombreColocataires > 0) {
+          const totalDepenses = json.data.reduce((sum, f) => sum + (f.amount || 0), 0);
+          const partParPersonne = totalDepenses / nombreColocataires;
+          const mesDepenses = json.data
+            .filter(f => f.paidBy === user.id)
+            .reduce((sum, f) => sum + (f.amount || 0), 0);
+          
+          const balance = mesDepenses - partParPersonne;
+          setMesDettes(balance < 0 ? Math.abs(balance) : 0);
+          setOnMeDoit(balance > 0 ? balance : 0);
+        }
+      }
+
+      setDeleteDialogOpen(false);
+      setExpenseToDelete(null);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      alert("Erreur lors de la suppression de la dépense");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -120,7 +325,7 @@ export default function Finances() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-[#0e141b]">Finances</h1>
-        <Button>
+        <Button onClick={() => handleOpenDialog()}>
           <Plus className="w-4 h-4 mr-2" />
           AJOUTER DÉPENSE
         </Button>
@@ -194,6 +399,189 @@ export default function Finances() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Tableau des dépenses */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-[#0e141b]">Dépenses récentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Payé par</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Montant</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedExpenses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-[#4e7397]">
+                      Aucune dépense enregistrée
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedExpenses.map(expense => (
+                    <TableRow key={expense.id}>
+                      <TableCell>{formatDate(expense.date)}</TableCell>
+                      <TableCell>{getUserName(expense.paidBy)}</TableCell>
+                      <TableCell>{expense.title}</TableCell>
+                      <TableCell className="text-right">{formatMontant(expense.amount)}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleOpenDialog(expense)}>
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(expense)} 
+                              className="text-red-600"
+                            >
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {finances.length > 0 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-[#4e7397]">
+                {startIndex + 1} à {Math.min(endIndex, finances.length)} sur {finances.length} résultats
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrevious}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                >
+                  Suivant
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog Ajouter/Modifier Dépense */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingExpense ? "Modifier" : "Ajouter"} une dépense
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Titre</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ex: Courses Carrefour"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Montant (€)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paidBy">Payé par</Label>
+              <Select
+                value={formData.paidBy}
+                onValueChange={(value) => setFormData({ ...formData, paidBy: value })}
+                required
+              >
+                <SelectTrigger id="paidBy">
+                  <SelectValue placeholder="Sélectionner un membre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {colocation?.members?.map(member => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Annuler
+              </Button>
+              <Button type="submit">
+                {editingExpense ? "Modifier" : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* AlertDialog Confirmation Suppression */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette dépense ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. La dépense "{expenseToDelete?.title}" sera définitivement supprimée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
