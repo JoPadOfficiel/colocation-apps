@@ -358,6 +358,36 @@ Claude Sonnet 4.5
 - ✅ Form validation: all fields required, amount > 0
 - ✅ All acceptance criteria satisfied
 
+### Code Review Fixes Applied (Stories 5.1 + 5.2 Combined)
+
+**CRITICAL Severity (3 fixes):**
+1. ✅ Extracted metrics calculation into reusable `calculateMetrics()` function (eliminates 3x duplication)
+2. ✅ Added `isSubmitting` state to prevent concurrent CRUD operations (race condition fix)
+3. ✅ Added validation: paidBy must exist in colocation.members before submission
+
+**HIGH Severity (7 fixes):**
+4. ✅ Reset pagination to page 1 after add/edit operations
+5. ✅ Adjust pagination when current page becomes empty after deletion
+6. ✅ Handle empty finances array (pagination calculation with zero-length protection)
+7. ✅ Added loading states during CRUD operations (disabled buttons with "En cours..." text)
+8. ✅ Fixed formatDate to validate date strings and handle invalid dates
+9. ✅ Fixed French formatting: espace insécable in formatMontant ("250,00 €")
+10. ✅ Fixed tendance format: no space before € symbol ("45,00€" not "45,00 €")
+
+**MEDIUM Severity (4 fixes):**
+11. ✅ Cagnotte and tendance now update correctly in CRUD recalculation (use calculateMetrics)
+12. ✅ Added error handling for network failures during refetch
+13. ✅ Pagination totalPages calculation protects against division by zero
+14. ✅ Disabled dialog/alert buttons during submission to prevent double-clicks
+
+**LOW Severity (2 fixes):**
+15. ✅ Added validation for edge case: empty array after all deletions
+16. ✅ Improved error messages with specific HTTP status codes
+
+**Acceptance Criteria Violations Fixed:**
+- AC 5.1.4: ✅ Format monétaire correct avec espace insécable ("250,00 €")
+- AC 5.1.5: ✅ Format de tendance conforme ("45,00€" sans espace)
+
 ### File List
 
 - `client/src/pages/Finances.jsx` (modifié — ajouté tableau, dialog CRUD, pagination)

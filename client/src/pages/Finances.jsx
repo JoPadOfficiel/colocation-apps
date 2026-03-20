@@ -42,6 +42,42 @@ export default function Finances() {
     paidBy: ""
   });
 
+  // Fonction de calcul des métriques réutilisable (évite duplication)
+  const calculateMetrics = (financesData) => {
+    const nombreColocataires = colocation?.members?.length || 0;
+    
+    // Protection contre division par zéro
+    if (nombreColocataires === 0) {
+      setCagnotte(colocation?.totalFund || 0);
+      setMesDettes(0);
+      setOnMeDoit(0);
+      setTendance(0);
+      return;
+    }
+    
+    const totalDepenses = financesData.reduce((sum, f) => sum + (f.amount || 0), 0);
+    const partParPersonne = totalDepenses / nombreColocataires;
+    const mesDepenses = financesData
+      .filter(f => f.paidBy === user?.id)
+      .reduce((sum, f) => sum + (f.amount || 0), 0);
+    
+    // Calcul de l'équilibre financier
+    const balance = mesDepenses - partParPersonne;
+    
+    // Mise à jour de la cagnotte depuis colocation
+    const cagnotteActuelle = colocation?.totalFund || 0;
+    setCagnotte(cagnotteActuelle);
+    
+    // Logique conditionnelle : soit dette, soit créance, pas les deux
+    setMesDettes(balance < 0 ? Math.abs(balance) : 0);
+    setOnMeDoit(balance > 0 ? balance : 0);
+    
+    // Calcul de la tendance (pour l'instant simplifié)
+    // TODO Story 5.3: Calculer depuis l'historique réel
+    const tendanceCalculee = cagnotteActuelle * 0.18; // 18% de la cagnotte comme approximation
+    setTendance(tendanceCalculee);
+  };
+
   useEffect(() => {
     // Validation précoce des dépendances
     if (!colocation || !user) {
@@ -66,37 +102,7 @@ export default function Finances() {
         }
         
         setFinances(json.data);
-        
-        // Calcul des métriques avec validation
-        const nombreColocataires = colocation.members?.length || 0;
-        
-        // Protection contre division par zéro
-        if (nombreColocataires === 0) {
-          setCagnotte(colocation.totalFund || 0);
-          setMesDettes(0);
-          setOnMeDoit(0);
-          setTendance(0);
-          return;
-        }
-        
-        const totalDepenses = json.data.reduce((sum, f) => sum + (f.amount || 0), 0);
-        const partParPersonne = totalDepenses / nombreColocataires;
-        const mesDepenses = json.data
-          .filter(f => f.paidBy === user.id)
-          .reduce((sum, f) => sum + (f.amount || 0), 0);
-        
-        // Calcul de l'équilibre financier
-        const balance = mesDepenses - partParPersonne;
-        
-        setCagnotte(colocation.totalFund || 0);
-        // Logique conditionnelle : soit dette, soit créance, pas les deux
-        setMesDettes(balance < 0 ? Math.abs(balance) : 0);
-        setOnMeDoit(balance > 0 ? balance : 0);
-        
-        // Calcul de la tendance (pour l'instant simplifié)
-        // TODO Story 5.3: Calculer depuis l'historique réel
-        const tendanceCalculee = (colocation.totalFund || 0) * 0.18; // 18% de la cagnotte comme approximation
-        setTendance(tendanceCalculee);
+        calculateMetrics(json.data);
         
       } catch (error) {
         console.error("Erreur lors du chargement des finances:", error);
@@ -114,12 +120,16 @@ export default function Finances() {
     if (!isFinite(montant)) {
       return "0,00 €";
     }
-    // Format français avec virgule comme séparateur décimal
+    // Format français avec virgule comme séparateur décimal et espace insécable
     return `${montant.toFixed(2).replace(".", ",")} €`;
   };
 
   const formatDate = (dateString) => {
+    // Validation de la date
+    if (!dateString) return "Date invalide";
     const date = new Date(dateString);
+    // Vérification que la date est valide
+    if (isNaN(date.getTime())) return "Date invalide";
     return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   };
 
@@ -128,8 +138,8 @@ export default function Finances() {
     return member?.name || "Inconnu";
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(finances.length / itemsPerPage);
+  // Pagination logic avec protection contre division par zéro
+  const totalPages = finances.length > 0 ? Math.ceil(finances.length / itemsPerPage) : 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedExpenses = finances.slice(startIndex, endIndex);
@@ -141,6 +151,9 @@ export default function Finances() {
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
+
+  // État de chargement pour les opérations CRUD
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // CRUD handlers
   const handleOpenDialog = (expense = null) => {
@@ -173,6 +186,9 @@ export default function Finances() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prévenir les soumissions multiples
+    if (isSubmitting) return;
+    
     // Validation
     if (!formData.title || !formData.amount || !formData.date || !formData.paidBy) {
       alert("Tous les champs sont requis");
@@ -185,6 +201,14 @@ export default function Finances() {
       return;
     }
 
+    // Validation: paidBy doit exister dans colocation.members
+    const memberExists = colocation?.members?.some(m => m.id === formData.paidBy);
+    if (!memberExists) {
+      alert("Le membre sélectionné n'existe pas dans la colocation");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const expenseData = {
         title: formData.title,
@@ -225,26 +249,18 @@ export default function Finances() {
       const json = await fetchRes.json();
       if (json.data && Array.isArray(json.data)) {
         setFinances(json.data);
-        
-        // Recalcul des métriques
-        const nombreColocataires = colocation.members?.length || 0;
-        if (nombreColocataires > 0) {
-          const totalDepenses = json.data.reduce((sum, f) => sum + (f.amount || 0), 0);
-          const partParPersonne = totalDepenses / nombreColocataires;
-          const mesDepenses = json.data
-            .filter(f => f.paidBy === user.id)
-            .reduce((sum, f) => sum + (f.amount || 0), 0);
-          
-          const balance = mesDepenses - partParPersonne;
-          setMesDettes(balance < 0 ? Math.abs(balance) : 0);
-          setOnMeDoit(balance > 0 ? balance : 0);
-        }
+        // Réinitialiser la pagination à la page 1 après modification
+        setCurrentPage(1);
+        // Utiliser la fonction centralisée pour recalculer les métriques
+        calculateMetrics(json.data);
       }
 
       handleCloseDialog();
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
       alert("Erreur lors de la sauvegarde de la dépense");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -254,8 +270,9 @@ export default function Finances() {
   };
 
   const confirmDelete = async () => {
-    if (!expenseToDelete) return;
+    if (!expenseToDelete || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/finances/${expenseToDelete.id}`, {
         method: "DELETE"
@@ -275,19 +292,16 @@ export default function Finances() {
       if (json.data && Array.isArray(json.data)) {
         setFinances(json.data);
         
-        // Recalcul des métriques
-        const nombreColocataires = colocation.members?.length || 0;
-        if (nombreColocataires > 0) {
-          const totalDepenses = json.data.reduce((sum, f) => sum + (f.amount || 0), 0);
-          const partParPersonne = totalDepenses / nombreColocataires;
-          const mesDepenses = json.data
-            .filter(f => f.paidBy === user.id)
-            .reduce((sum, f) => sum + (f.amount || 0), 0);
-          
-          const balance = mesDepenses - partParPersonne;
-          setMesDettes(balance < 0 ? Math.abs(balance) : 0);
-          setOnMeDoit(balance > 0 ? balance : 0);
+        // Ajuster la pagination si la page actuelle devient vide
+        const newTotalPages = Math.ceil(json.data.length / itemsPerPage);
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        } else if (json.data.length === 0) {
+          setCurrentPage(1);
         }
+        
+        // Utiliser la fonction centralisée pour recalculer les métriques
+        calculateMetrics(json.data);
       }
 
       setDeleteDialogOpen(false);
@@ -295,6 +309,8 @@ export default function Finances() {
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       alert("Erreur lors de la suppression de la dépense");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -358,7 +374,7 @@ export default function Finances() {
               ) : (
                 <TrendingDown className="w-4 h-4 mr-1" />
               )}
-              {tendance >= 0 ? "+" : ""}{formatMontant(Math.abs(tendance))} ce mois
+              {tendance >= 0 ? "+" : ""}{formatMontant(Math.abs(tendance)).replace(" €", "€")} ce mois
             </Badge>
           </CardContent>
         </Card>
@@ -551,11 +567,11 @@ export default function Finances() {
               </Select>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+              <Button type="button" variant="outline" onClick={handleCloseDialog} disabled={isSubmitting}>
                 Annuler
               </Button>
-              <Button type="submit">
-                {editingExpense ? "Modifier" : "Ajouter"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "En cours..." : (editingExpense ? "Modifier" : "Ajouter")}
               </Button>
             </DialogFooter>
           </form>
@@ -572,12 +588,13 @@ export default function Finances() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
+              disabled={isSubmitting}
               className="bg-red-600 hover:bg-red-700"
             >
-              Supprimer
+              {isSubmitting ? "Suppression..." : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

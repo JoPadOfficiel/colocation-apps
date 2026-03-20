@@ -326,7 +326,7 @@ Claude Sonnet 4.5
 
 **MEDIUM Severity (4 fixes):**
 6. ✅ Fixed financial logic: conditional debt/credit (only one positive at a time)
-7. ✅ Fixed French decimal formatting (comma instead of period)
+7. ✅ Fixed French decimal formatting (comma instead of period) with espace insécable
 8. ✅ Added conditional colors for debt/credit cards based on sign
 9. ✅ Added error state UI with retry button
 
