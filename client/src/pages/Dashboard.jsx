@@ -255,7 +255,7 @@ export default function Dashboard() {
             value={`${totalSubscriptions} actif${totalSubscriptions > 1 ? "s" : ""}`}
             badge="services partagés"
             badgeColor="bg-purple-50 text-purple-600"
-            onClick={() => navigate("/settings")}
+            onClick={() => navigate("/subscriptions")}
           />
         </div>
       )}
