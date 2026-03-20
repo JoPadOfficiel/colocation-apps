@@ -3,7 +3,7 @@ epic: "Epic 1 : Fondations & Projet Setup"
 storyId: "1.3"
 title: "AuthContext et mock data"
 assignee: "Jopad"
-status: backlog
+status: "done"
 priority: high
 frs: [FR49, FR50]
 ---
@@ -72,11 +72,15 @@ Pas de reference visuelle directe — ce sont les donnees qui alimentent tous le
 
 - Story 1.1 (projet initialise)
 
+## Citations
+- [PRD: Section 6.2 - Architecture](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L214-215)
+- [PRD: Section 6.3 - Modèle de données](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L218-220)
+
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] `useAuth()` retourne user, colocation, login, register, logout, isAdmin
-- [ ] mockData.js contient les 7 entites avec donnees realistes
-- [ ] `api.js` exporte des fonctions fetch pour chaque ressource
-- [ ] Les routes API `/api/users` et `/api/colocation` repondent correctement
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] `useAuth()` retourne user, colocation, login, register, logout, isAdmin
+- [x] mockData.js contient les 7 entites avec donnees realistes
+- [x] `api.js` exporte des fonctions fetch pour chaque ressource
+- [x] Les routes API `/api/users` et `/api/colocation` repondent correctement
+- [x] Pas d'erreur console

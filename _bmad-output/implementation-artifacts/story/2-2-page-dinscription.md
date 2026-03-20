@@ -3,7 +3,7 @@ epic: "Epic 2 : Authentification & Onboarding"
 storyId: "2.2"
 title: "Page d'inscription"
 assignee: "Yohan"
-status: backlog
+status: done
 priority: high
 frs: [FR1, FR6]
 ---
@@ -22,7 +22,15 @@ So that **je peux rejoindre ou creer une colocation**.
 **When** je remplis nom, email, mot de passe (>=8 caracteres) et clique "S'INSCRIRE"
 **Then** mon compte est cree et je suis redirige vers le choix creer/rejoindre colocation
 **And** des boutons Google et Facebook sont affiches (visuels uniquement, non fonctionnels)
-**And** un lien "Deja un compte ? Se connecter" est visible
+**And** un lien "Deja un compte ? Se connecter" est visible (`Register.jsx:L157-162`)
+
+## Code Citations
+
+- **Validation Inscription** : `Register.jsx:L25-32` (Validation du nom long, email regex et mot de passe >= 8 caractères)
+- **Formulaire d'Inscription** : `Register.jsx:L72-137` (Champs Name, Email, Password avec toggle)
+- **Logique d'Authentification** : `Register.jsx:L34-53` (Appel à `register` de `AuthContext`)
+- **Boutons Sociaux (Visuels)** : `Register.jsx:L149-155` (Boutons désactivés conformes à l'AC)
+- **Navigation vers Connexion** : `Register.jsx:L157-162` (Lien vers `/login`)
 
 ## Notes d'Implementation Technique
 
