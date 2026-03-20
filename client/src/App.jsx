@@ -7,11 +7,11 @@ import Onboarding from "./pages/Onboarding"
 import Dashboard from "./pages/Dashboard"
 import Tasks from "./pages/Tasks"
 import Subscriptions from "./pages/Subscriptions"
+import Finances from "./pages/Finances"
 import { useAuth } from "./contexts/AuthContext"
 
 // Temporary mock pages
 const Food = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Alimentation</h1><p className="text-gray-600">Liste de courses et menus.</p></div>;
-const Finances = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Finances</h1><p className="text-gray-600">Suivi des dépenses communes.</p></div>;
 const Settings = () => <div className="p-4 animate-in fade-in duration-500"><h1 className="text-3xl font-bold text-gray-900 mb-4">Paramètres</h1><p className="text-gray-600">Configuration de la colocation.</p></div>;
 
 function ProtectedRoute({ children }) {
