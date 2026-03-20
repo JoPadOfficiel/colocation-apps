@@ -304,13 +304,17 @@ export default function Food() {
     setDailyMenu(randomRecipe)
   }
 
+  const filteredShoppingItems = shoppingItems.filter(item =>
+    item.itemName.toLowerCase().includes(newItemName.toLowerCase())
+  )
+
   const itemsByCategory = SHOPPING_CATEGORIES.reduce((acc, cat) => {
-    const items = shoppingItems.filter(i => i.category === cat)
+    const items = filteredShoppingItems.filter(i => i.category === cat)
     if (items.length > 0) acc[cat] = items
     return acc
   }, {})
 
-  const otherItems = shoppingItems.filter(i => !SHOPPING_CATEGORIES.includes(i.category))
+  const otherItems = filteredShoppingItems.filter(i => !SHOPPING_CATEGORIES.includes(i.category))
   if (otherItems.length > 0) {
     itemsByCategory["Autre"] = [...(itemsByCategory["Autre"] || []), ...otherItems]
   }
@@ -478,9 +482,12 @@ export default function Food() {
                               onCheckedChange={() => toggleShoppingItem(item)}
                             />
                             <div className="min-w-0">
-                              <p className={`text-sm font-medium leading-none ${item.isPurchased ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                                {item.itemName}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className={`text-sm font-medium leading-none ${item.isPurchased ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                                  {item.itemName}
+                                </p>
+                                {item.isPurchased && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
+                              </div>
                               {item.assignedTo && (
                                 <p className="text-[10px] text-gray-500 mt-1 truncate">
                                   Assigné à : {userMap[item.assignedTo] || "Inconnu"}
@@ -683,7 +690,10 @@ export default function Food() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Mes Régimes & Allergies</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  Mes Régimes & Allergies
+                </CardTitle>
                 <CardDescription>
                   Ces informations aident vos colocataires à planifier des repas inclusifs.
                 </CardDescription>
@@ -734,7 +744,10 @@ export default function Food() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Régimes de la Colocation</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Régimes de la Colocation
+                </CardTitle>
                 <CardDescription>
                   Consultez les besoins alimentaires de vos colocataires.
                 </CardDescription>
