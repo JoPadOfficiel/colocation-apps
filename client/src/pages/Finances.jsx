@@ -9,6 +9,7 @@ export default function Finances() {
   const { user, colocation } = useAuth();
   const [finances, setFinances] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Métriques calculées
   const [cagnotte, setCagnotte] = useState(0);
@@ -17,28 +18,64 @@ export default function Finances() {
   const [tendance, setTendance] = useState(0);
 
   useEffect(() => {
+    // Validation précoce des dépendances
+    if (!colocation || !user) {
+      setLoading(false);
+      return;
+    }
+
     const fetchFinances = async () => {
       try {
         const res = await fetch("/api/finances");
-        const json = await res.json();
-        setFinances(json.data || []);
         
-        // Calcul des métriques
-        if (colocation && user && json.data) {
-          const totalDepenses = json.data.reduce((sum, f) => sum + f.amount, 0);
-          const nombreColocataires = colocation.members.length;
-          const partParPersonne = totalDepenses / nombreColocataires;
-          const mesDepenses = json.data
-            .filter(f => f.paidBy === user.id)
-            .reduce((sum, f) => sum + f.amount, 0);
-          
-          setCagnotte(colocation.totalFund || 0);
-          setMesDettes(partParPersonne - mesDepenses);
-          setOnMeDoit(mesDepenses - partParPersonne);
-          setTendance(45.00); // Mock tendance mensuelle
+        // Vérification du statut HTTP
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
+        
+        const json = await res.json();
+        
+        // Validation de la structure de la réponse
+        if (!json.data || !Array.isArray(json.data)) {
+          throw new Error("Format de réponse invalide");
+        }
+        
+        setFinances(json.data);
+        
+        // Calcul des métriques avec validation
+        const nombreColocataires = colocation.members?.length || 0;
+        
+        // Protection contre division par zéro
+        if (nombreColocataires === 0) {
+          setCagnotte(colocation.totalFund || 0);
+          setMesDettes(0);
+          setOnMeDoit(0);
+          setTendance(0);
+          return;
+        }
+        
+        const totalDepenses = json.data.reduce((sum, f) => sum + (f.amount || 0), 0);
+        const partParPersonne = totalDepenses / nombreColocataires;
+        const mesDepenses = json.data
+          .filter(f => f.paidBy === user.id)
+          .reduce((sum, f) => sum + (f.amount || 0), 0);
+        
+        // Calcul de l'équilibre financier
+        const balance = mesDepenses - partParPersonne;
+        
+        setCagnotte(colocation.totalFund || 0);
+        // Logique conditionnelle : soit dette, soit créance, pas les deux
+        setMesDettes(balance < 0 ? Math.abs(balance) : 0);
+        setOnMeDoit(balance > 0 ? balance : 0);
+        
+        // Calcul de la tendance (pour l'instant simplifié)
+        // TODO Story 5.3: Calculer depuis l'historique réel
+        const tendanceCalculee = (colocation.totalFund || 0) * 0.18; // 18% de la cagnotte comme approximation
+        setTendance(tendanceCalculee);
+        
       } catch (error) {
         console.error("Erreur lors du chargement des finances:", error);
+        setError(error.message || "Erreur lors du chargement des données");
       } finally {
         setLoading(false);
       }
@@ -48,13 +85,32 @@ export default function Finances() {
   }, [colocation, user]);
 
   const formatMontant = (montant) => {
-    return `${montant.toFixed(2)} €`;
+    // Gestion des valeurs non finies (NaN, Infinity)
+    if (!isFinite(montant)) {
+      return "0,00 €";
+    }
+    // Format français avec virgule comme séparateur décimal
+    return `${montant.toFixed(2).replace(".", ",")} €`;
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-[#4e7397]">Chargement...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center space-y-4">
+          <p className="text-[#ef4444] font-medium">Erreur</p>
+          <p className="text-[#4e7397]">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Réessayer
+          </Button>
+        </div>
       </div>
     );
   }
@@ -86,10 +142,18 @@ export default function Finances() {
             </div>
             <Badge 
               variant="outline" 
-              className="mt-2 border-[#22c55e] text-[#22c55e]"
+              className={`mt-2 ${
+                tendance >= 0 
+                  ? "border-[#22c55e] text-[#22c55e]" 
+                  : "border-[#ef4444] text-[#ef4444]"
+              }`}
             >
-              <TrendingUp className="w-4 h-4 mr-1" />
-              +{formatMontant(tendance)} ce mois
+              {tendance >= 0 ? (
+                <TrendingUp className="w-4 h-4 mr-1" />
+              ) : (
+                <TrendingDown className="w-4 h-4 mr-1" />
+              )}
+              {tendance >= 0 ? "+" : ""}{formatMontant(Math.abs(tendance))} ce mois
             </Badge>
           </CardContent>
         </Card>
@@ -103,7 +167,9 @@ export default function Finances() {
             <ArrowDown className="h-5 w-5 text-[#ef4444]" aria-label="Dettes" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#ef4444]">
+            <div className={`text-3xl font-bold ${
+              mesDettes > 0 ? "text-[#ef4444]" : "text-[#22c55e]"
+            }`}>
               {formatMontant(mesDettes)}
             </div>
             <p className="text-sm text-[#4e7397] mt-2">À rembourser</p>
@@ -119,7 +185,9 @@ export default function Finances() {
             <ArrowUp className="h-5 w-5 text-[#22c55e]" aria-label="Créances" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#22c55e]">
+            <div className={`text-3xl font-bold ${
+              onMeDoit > 0 ? "text-[#22c55e]" : "text-[#4e7397]"
+            }`}>
               {formatMontant(onMeDoit)}
             </div>
             <p className="text-sm text-[#4e7397] mt-2">À recevoir</p>
