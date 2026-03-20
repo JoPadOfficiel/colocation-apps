@@ -1,65 +1,81 @@
 ---
-title: "Story 2.2 : Page d'inscription"
 epic: "Epic 2 : Authentification & Onboarding"
-status: "ready-for-dev"
+storyId: "2.2"
+title: "Page d'inscription"
 assignee: "Yohan"
+status: done
+priority: high
+frs: [FR1, FR6]
 ---
 
 # Story 2.2 : Page d'inscription
 
-Status: ready-for-dev
+## User Story
 
-## Story
+As a **visiteur**,
+I want **creer un compte avec mon nom, email et mot de passe**,
+So that **je peux rejoindre ou creer une colocation**.
 
-As a visiteur,
-I want créer un compte avec mon nom, email et mot de passe,
-so that je peux rejoindre ou créer une colocation.
+## Criteres d'Acceptation
 
-## Acceptance Criteria
+**Given** je suis sur `/register`
+**When** je remplis nom, email, mot de passe (>=8 caracteres) et clique "S'INSCRIRE"
+**Then** mon compte est cree et je suis redirige vers le choix creer/rejoindre colocation
+**And** des boutons Google et Facebook sont affiches (visuels uniquement, non fonctionnels)
+**And** un lien "Deja un compte ? Se connecter" est visible (`Register.jsx:L157-162`)
 
-1. **Given** je suis sur `/register`, **When** je remplis nom, email, mot de passe (≥8 caractères) et clique "S'INSCRIRE", **Then** mon compte est créé et je suis redirigé vers le choix créer/rejoindre colocation.
-2. **And** des boutons Google et Facebook sont affichés (visuels uniquement, non fonctionnels).
-3. **And** un lien "Déjà un compte ? Se connecter" est visible.
+## Code Citations
 
-## Tasks / Subtasks
+- **Validation Inscription** : `Register.jsx:L25-32` (Validation du nom long, email regex et mot de passe >= 8 caractères)
+- **Formulaire d'Inscription** : `Register.jsx:L72-137` (Champs Name, Email, Password avec toggle)
+- **Logique d'Authentification** : `Register.jsx:L34-53` (Appel à `register` de `AuthContext`)
+- **Boutons Sociaux (Visuels)** : `Register.jsx:L149-155` (Boutons désactivés conformes à l'AC)
+- **Navigation vers Connexion** : `Register.jsx:L157-162` (Lien vers `/login`)
 
-- [ ] **Task 1 : Créer Register.jsx** (AC: #1, #2, #3)
-  - [ ] Formulaire : nom complet, email, mot de passe (toggle visibilité)
-  - [ ] Validation : nom requis, email format, password ≥ 8 chars
-  - [ ] Bouton "S'INSCRIRE" pleine largeur, loading state
-  - [ ] Boutons Google/Facebook visuels (non fonctionnels)
-  - [ ] Lien "Déjà un compte ? Se connecter" → /login
-  - [ ] Redirect si déjà authentifié
+## Notes d'Implementation Technique
 
-- [ ] **Task 2 : Route API POST /api/auth/register** (AC: #1)
-  - [ ] Ajouter endpoint dans server/index.js
-  - [ ] Vérifier que l'email n'existe pas déjà
-  - [ ] Créer l'utilisateur dans le mock array
-  - [ ] Retourner le user créé (sans password)
+### Fichiers a Creer/Modifier
 
-- [ ] **Task 3 : Ajouter register() dans AuthContext** (AC: #1)
-  - [ ] Fonction register(name, email, password)
-  - [ ] Appelle POST /api/auth/register
-  - [ ] Met à jour user dans le state + sessionStorage
-  - [ ] Retourne success/error
+- `client/src/pages/Register.jsx` — Page d'inscription complete
+- `client/src/App.jsx` — Ajouter route `/register`
 
-- [ ] **Task 4 : Mettre à jour App.jsx** (AC: #1)
-  - [ ] Remplacer le placeholder /register par Register.jsx
+### Endpoints API
 
-## Dev Notes
+- `POST /api/auth/register` — Body: `{ name, email, password }` — Reponse: `{ data: { user } }`
 
-- Suivre exactement les patterns de Login.jsx
-- Après inscription réussie, redirect vers /onboarding (Story 2.3) — pour l'instant /dashboard
-- Les boutons social sont visuels uniquement — pas de onClick
+### Composants Utilises
 
-### File List
-- `client/src/pages/Register.jsx` (nouveau)
-- `client/src/contexts/AuthContext.jsx` (modifier — ajouter register())
-- `client/src/App.jsx` (modifier — route /register)
-- `server/index.js` (modifier — POST /api/auth/register)
+- shadcn/ui : `Button`, `Input`, `Card`, `CardHeader`, `CardContent`
+- Material Symbols : `person`, `mail`, `lock`, `visibility_off`
 
-## Dev Agent Record
+### Donnees Mock
 
-### Agent Model Used
-### Completion Notes List
-### File List
+- Inscription reussie pour tout email non deja pris
+- Validation : nom requis, email format valide, mot de passe >= 8 caracteres
+
+### Reference Design
+
+**Ecran 2 — Inscription (ui-design.md) :**
+- Header : logo "ColocApp" + nav (Accueil, Fonctionnalites, Tarifs) + lien "Se connecter"
+- Titre : "Creer un compte"
+- Sous-titre : "Rejoignez notre communaute de colocataires"
+- Champ Nom complet (icone `person`, requis)
+- Champ Adresse email (icone `mail`, requis, format email)
+- Champ Mot de passe (icone `lock` + toggle `visibility_off`, "Au moins 8 caracteres")
+- Bouton "S'INSCRIRE" : full-width, couleur `primary`
+- Boutons Google + Facebook (visuels uniquement — `onClick` affiche toast "Bientot disponible")
+- Lien "Deja un compte ? Se connecter" → `/login`
+
+## Dependances
+
+- Story 1.1 (projet initialise)
+- Story 1.3 (AuthContext)
+
+## Definition of Done
+
+- [ ] Tous les criteres d'acceptation passent
+- [ ] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
+- [ ] Utilise shadcn/ui (Card, Input, Button)
+- [ ] Validation : nom requis, email format, password >= 8 chars
+- [ ] Boutons Google/Facebook visibles mais non fonctionnels
+- [ ] Pas d'erreur console
