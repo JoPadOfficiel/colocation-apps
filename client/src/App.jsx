@@ -6,6 +6,7 @@ import ForgotPassword from "./pages/ForgotPassword"
 import Onboarding from "./pages/Onboarding"
 import Dashboard from "./pages/Dashboard"
 import Tasks from "./pages/Tasks"
+import Subscriptions from "./pages/Subscriptions"
 import { useAuth } from "./contexts/AuthContext"
 
 // Temporary mock pages
@@ -34,6 +35,7 @@ function App() {
           <Route path="tasks" element={<Tasks />} />
           <Route path="food" element={<Food />} />
           <Route path="finances" element={<Finances />} />
+          <Route path="subscriptions" element={<Subscriptions />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

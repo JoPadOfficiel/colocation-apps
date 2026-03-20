@@ -3,7 +3,7 @@ epic: "Epic 7 : Gestion des Abonnements"
 storyId: "7.1"
 title: "Liste des abonnements"
 assignee: "Yohan"
-status: backlog
+status: review
 priority: high
 frs: [FR39]
 ---
@@ -66,9 +66,9 @@ So that **je sais combien coutent nos abonnements et quand ils sont preleves**.
 
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] Responsive : grille multi-colonnes desktop, 1 colonne mobile
-- [ ] Utilise shadcn/ui (Card, Badge, Button)
-- [ ] Cout total calcule dynamiquement
-- [ ] Donnees mock depuis mockData.js via API
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : grille multi-colonnes desktop, 1 colonne mobile
+- [x] Utilise shadcn/ui (Card, Badge, Button)
+- [x] Cout total calcule dynamiquement
+- [x] Donnees mock depuis mockData.js via API
+- [x] Pas d'erreur console
