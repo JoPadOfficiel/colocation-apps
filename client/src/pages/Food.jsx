@@ -105,6 +105,7 @@ export default function Food() {
     dietaryConstraints: [],
     isFavorite: false
   })
+  const [recipeErrors, setRecipeErrors] = useState({})
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [recipeToDelete, setRecipeToDelete] = useState(null)
 
@@ -182,6 +183,7 @@ export default function Food() {
       dietaryConstraints: [],
       isFavorite: false
     })
+    setRecipeErrors({})
     setEditingRecipe(null)
     setRecipeDialogOpen(false)
   }
@@ -207,6 +209,7 @@ export default function Food() {
       dietaryConstraints: [],
       isFavorite: false
     })
+    setRecipeErrors({})
     setRecipeDialogOpen(true)
   }
 
@@ -220,11 +223,25 @@ export default function Food() {
       dietaryConstraints: recipe.dietaryConstraints || [],
       isFavorite: recipe.isFavorite || false
     })
+    setRecipeErrors({})
     setRecipeDialogOpen(true)
+  }
+
+  const validateRecipeForm = () => {
+    const newErrors = {};
+    if (!recipeForm.dishName.trim()) newErrors.dishName = "Le nom du plat est requis";
+    if (!recipeForm.prepTime || parseInt(recipeForm.prepTime) <= 0) newErrors.prepTime = "Le temps de préparation doit être > 0";
+    if (!recipeForm.portions || parseInt(recipeForm.portions) <= 0) newErrors.portions = "Le nombre de portions doit être > 0";
+    if (!recipeForm.ingredients.trim()) newErrors.ingredients = "Les ingrédients sont requis";
+    
+    setRecipeErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   }
 
   async function handleRecipeSubmit(e) {
     e.preventDefault()
+    if (!validateRecipeForm()) return;
+
     const payload = {
       ...recipeForm,
       prepTime: parseInt(recipeForm.prepTime) || 0,
@@ -618,6 +635,7 @@ export default function Food() {
                     onChange={(e) => setRecipeForm(f => ({ ...f, dishName: e.target.value }))}
                     required
                   />
+                  {recipeErrors.dishName && <p className="text-sm text-red-500 mt-1">{recipeErrors.dishName}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -629,6 +647,7 @@ export default function Food() {
                       onChange={(e) => setRecipeForm(f => ({ ...f, prepTime: e.target.value }))}
                       required
                     />
+                    {recipeErrors.prepTime && <p className="text-sm text-red-500 mt-1">{recipeErrors.prepTime}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Portions</label>
@@ -639,6 +658,7 @@ export default function Food() {
                       onChange={(e) => setRecipeForm(f => ({ ...f, portions: e.target.value }))}
                       required
                     />
+                    {recipeErrors.portions && <p className="text-sm text-red-500 mt-1">{recipeErrors.portions}</p>}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -649,6 +669,7 @@ export default function Food() {
                     onChange={(e) => setRecipeForm(f => ({ ...f, ingredients: e.target.value }))}
                     required
                   />
+                  {recipeErrors.ingredients && <p className="text-sm text-red-500 mt-1">{recipeErrors.ingredients}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Contraintes alimentaires</label>

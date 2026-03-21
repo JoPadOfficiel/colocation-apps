@@ -54,6 +54,7 @@ export default function Tasks() {
   const [form, setForm] = useState({
     title: "", description: "", category: "Autre", assignedTo: "", dueDate: "", recurrence: "none",
   })
+  const [formError, setFormError] = useState(null)
 
   useEffect(() => {
     Promise.all([fetchTasks(), fetchUsers()])
@@ -68,12 +69,14 @@ export default function Tasks() {
   function resetForm() {
     setForm({ title: "", description: "", category: "Autre", assignedTo: user?.id || "", dueDate: "", recurrence: "none" })
     setEditingTask(null)
+    setFormError(null)
     setDialogOpen(false)
   }
 
   function openCreateDialog() {
     setForm({ title: "", description: "", category: "Autre", assignedTo: user?.id || "", dueDate: "", recurrence: "none" })
     setEditingTask(null)
+    setFormError(null)
     setDialogOpen(true)
   }
 
@@ -87,12 +90,17 @@ export default function Tasks() {
       recurrence: task.recurrence || "none",
     })
     setEditingTask(task)
+    setFormError(null)
     setDialogOpen(true)
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.title.trim()) return
+    if (!form.title.trim()) {
+      setFormError("Le titre de la tâche est requis")
+      return
+    }
+    setFormError(null)
     const payload = {
       ...form,
       dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : new Date().toISOString(),
@@ -295,12 +303,15 @@ export default function Tasks() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-3">
-            <Input
-              placeholder="Titre de la tâche"
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required
-            />
+            <div>
+              <Input
+                placeholder="Titre de la tâche"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                required
+              />
+              {formError && <p className="text-sm text-red-500 mt-1">{formError}</p>}
+            </div>
             <Input
               placeholder="Description (optionnel)"
               value={form.description}

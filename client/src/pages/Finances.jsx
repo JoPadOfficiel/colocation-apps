@@ -42,6 +42,7 @@ export default function Finances() {
     date: "",
     paidBy: ""
   });
+  const [formErrors, setFormErrors] = useState({});
 
   // Fonction de calcul des métriques réutilisable (évite duplication)
   const calculateMetrics = (financesData) => {
@@ -250,6 +251,7 @@ export default function Finances() {
         paidBy: user?.id || ""
       });
     }
+    setFormErrors({});
     setIsDialogOpen(true);
   };
 
@@ -257,32 +259,31 @@ export default function Finances() {
     setIsDialogOpen(false);
     setEditingExpense(null);
     setFormData({ title: "", amount: "", date: "", paidBy: "" });
+    setFormErrors({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Prévenir les soumissions multiples
     if (isSubmitting) return;
     
-    // Validation
-    if (!formData.title || !formData.amount || !formData.date || !formData.paidBy) {
-      alert("Tous les champs sont requis");
-      return;
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = "Le titre est requis";
+    if (!formData.date) newErrors.date = "La date est requise";
+    if (!formData.paidBy) newErrors.paidBy = "Le payeur est requis";
+    else if (!colocation?.members?.some(m => m.id === formData.paidBy)) {
+      newErrors.paidBy = "Le membre sélectionné n'existe pas";
     }
 
     const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      alert("Le montant doit être supérieur à 0");
-      return;
+    if (!formData.amount) {
+      newErrors.amount = "Le montant est requis";
+    } else if (isNaN(amount) || amount <= 0) {
+      newErrors.amount = "Le montant doit être supérieur à 0";
     }
 
-    // Validation: paidBy doit exister dans colocation.members
-    const memberExists = colocation?.members?.some(m => m.id === formData.paidBy);
-    if (!memberExists) {
-      alert("Le membre sélectionné n'existe pas dans la colocation");
-      return;
-    }
+    setFormErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsSubmitting(true);
     try {
@@ -671,6 +672,7 @@ export default function Finances() {
                 placeholder="Ex: Courses Carrefour"
                 required
               />
+              {formErrors.title && <p className="text-sm text-red-500 mt-1">{formErrors.title}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Montant (€)</Label>
@@ -684,6 +686,7 @@ export default function Finances() {
                 placeholder="0.00"
                 required
               />
+              {formErrors.amount && <p className="text-sm text-red-500 mt-1">{formErrors.amount}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
@@ -694,6 +697,7 @@ export default function Finances() {
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 required
               />
+              {formErrors.date && <p className="text-sm text-red-500 mt-1">{formErrors.date}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidBy">Payé par</Label>
@@ -713,6 +717,7 @@ export default function Finances() {
                   ))}
                 </SelectContent>
               </Select>
+              {formErrors.paidBy && <p className="text-sm text-red-500 mt-1">{formErrors.paidBy}</p>}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog} disabled={isSubmitting}>
