@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "../components/ui/dialog";
-import { Input } from "../components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
-import { fetchSubscriptions } from "../lib/api";
-import ConfirmDialog from "../components/ConfirmDialog";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { fetchSubscriptions } from "@/lib/api";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // Fallback data if API fails
 const FALLBACK_SUBSCRIPTIONS = [
@@ -25,6 +24,7 @@ export default function Subscriptions() {
   // Modal states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const [currentSub, setCurrentSub] = useState(null);
@@ -39,7 +39,7 @@ export default function Subscriptions() {
         if (data && data.length > 0) {
           // ensure data schema compatibility
           setSubscriptions(data.map(d => ({
-            ...d, 
+            ...d,
             placesLimit: d.placesLimit || null,
             placesUsed: d.placesUsed || null,
             credentials: d.credentials || null
@@ -47,7 +47,7 @@ export default function Subscriptions() {
         } else {
           setSubscriptions(FALLBACK_SUBSCRIPTIONS);
         }
-      } catch (err) {
+      } catch (_err) {
         setSubscriptions(FALLBACK_SUBSCRIPTIONS);
       } finally {
         setLoading(false);
@@ -91,9 +91,14 @@ export default function Subscriptions() {
     setIsDetailsOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (currentSub) {
+      setIsDeleting(true);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       setSubscriptions(subscriptions.filter(s => s.id !== currentSub.id));
+      setIsDeleting(false);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -112,9 +117,9 @@ export default function Subscriptions() {
 
     if (currentSub) {
       // Edit
-      setSubscriptions(subscriptions.map(s => 
-        s.id === currentSub.id 
-          ? { ...s, ...formData, costMonthly: Number(formData.costMonthly) } 
+      setSubscriptions(subscriptions.map(s =>
+        s.id === currentSub.id
+          ? { ...s, ...formData, costMonthly: Number(formData.costMonthly) }
           : s
       ));
     } else {
@@ -170,7 +175,7 @@ export default function Subscriptions() {
             const typeBadge = sub.type || "SERVICE";
             const price = Number(sub.costMonthly || sub.coutMensuel || 0).toFixed(2).replace(".", ",");
             const date = sub.dateBilling || sub.datePrelevement || "N/A";
-            
+
             return (
               <Card key={sub.id} className="shadow-card border-gray-100/60 overflow-hidden hover:shadow-md transition-shadow relative">
                 <CardContent className="p-0 flex flex-col h-full">
@@ -201,7 +206,7 @@ export default function Subscriptions() {
                         <span>Prochain prélèvement :</span>
                         <span className="ml-1 font-medium text-[#0e141b]">{date}</span>
                       </div>
-                      
+
                       {sub.placesLimit && (
                         <div className="flex items-center text-sm text-[#4e7397]">
                           <span className="material-symbols-outlined text-base mr-2 opacity-80">group</span>
@@ -214,9 +219,9 @@ export default function Subscriptions() {
 
                   <div className="px-6 py-4 bg-[#f6f7f8] border-t border-gray-100 flex items-center justify-between mt-auto">
                     {sub.credentials ? (
-                       <Button variant="ghost" size="sm" onClick={() => openDetailsDialog(sub)} className="text-[#4e7397] font-medium hover:text-[#4799eb] border border-transparent shadow-none px-0 hover:bg-transparent -ml-2">
-                         <span className="material-symbols-outlined mr-1 text-sm">key</span> Identifiants
-                       </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openDetailsDialog(sub)} className="text-[#4e7397] font-medium hover:text-[#4799eb] border border-transparent shadow-none px-0 hover:bg-transparent -ml-2">
+                        <span className="material-symbols-outlined mr-1 text-sm">key</span> Identifiants
+                      </Button>
                     ) : <div></div>}
                     <Button onClick={() => openEditDialog(sub)} variant="outline" size="sm" className="font-medium text-[#4e7397] hover:bg-white hover:text-[#4799eb] border-gray-200">
                       Modifier
@@ -245,14 +250,14 @@ export default function Subscriptions() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium">Nom du service</label>
-              <Input 
-                value={formData.nameService} 
-                onChange={(e) => setFormData({ ...formData, nameService: e.target.value })} 
-                placeholder="Ex: Netflix, Internet..." 
+              <Input
+                value={formData.nameService}
+                onChange={(e) => setFormData({ ...formData, nameService: e.target.value })}
+                placeholder="Ex: Netflix, Internet..."
               />
               {errors.nameService && <span className="text-red-500 text-xs">{errors.nameService}</span>}
             </div>
-            
+
             <div className="grid gap-2">
               <label className="text-sm font-medium">Type (Badge)</label>
               <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
@@ -269,24 +274,24 @@ export default function Subscriptions() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Coût Mensuel (€)</label>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  value={formData.costMonthly} 
-                  onChange={(e) => setFormData({ ...formData, costMonthly: e.target.value })} 
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.costMonthly}
+                  onChange={(e) => setFormData({ ...formData, costMonthly: e.target.value })}
                 />
                 {errors.costMonthly && <span className="text-red-500 text-xs">{errors.costMonthly}</span>}
               </div>
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Date prélèvement</label>
-                <Input 
-                  value={formData.dateBilling} 
-                  onChange={(e) => setFormData({ ...formData, dateBilling: e.target.value })} 
-                  placeholder="Ex: 12 Oct" 
+                <Input
+                  value={formData.dateBilling}
+                  onChange={(e) => setFormData({ ...formData, dateBilling: e.target.value })}
+                  placeholder="Ex: 12 Oct"
                 />
               </div>
             </div>
@@ -294,19 +299,19 @@ export default function Subscriptions() {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Places (limite)</label>
-                <Input 
-                  type="number" 
-                  value={formData.placesLimit} 
-                  onChange={(e) => setFormData({ ...formData, placesLimit: e.target.value })} 
+                <Input
+                  type="number"
+                  value={formData.placesLimit}
+                  onChange={(e) => setFormData({ ...formData, placesLimit: e.target.value })}
                   placeholder="Optionnel"
                 />
               </div>
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Places utilisées</label>
-                <Input 
-                  type="number" 
-                  value={formData.placesUsed} 
-                  onChange={(e) => setFormData({ ...formData, placesUsed: e.target.value })} 
+                <Input
+                  type="number"
+                  value={formData.placesUsed}
+                  onChange={(e) => setFormData({ ...formData, placesUsed: e.target.value })}
                   placeholder="Optionnel"
                 />
               </div>
@@ -331,7 +336,7 @@ export default function Subscriptions() {
           {currentSub?.credentials && (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <label className="text-sm font-medium text-gray-500">Nom d'utilisateur / Email</label>
+                <label className="text-sm font-medium text-gray-500">Nom d&apos;utilisateur / Email</label>
                 <div className="p-3 bg-gray-50 rounded-md border text-sm font-mono flex justify-between">
                   <span>{currentSub.credentials.user}</span>
                   <button className="text-[#4799eb] hover:underline text-xs my-auto" onClick={() => navigator.clipboard.writeText(currentSub.credentials.user)}>Copier</button>
@@ -364,7 +369,9 @@ export default function Subscriptions() {
         description="Êtes-vous sûr de vouloir supprimer cet abonnement ? Cette action mettra à jour le coût total."
         onConfirm={handleDelete}
         confirmText="Supprimer"
+        loadingText="Suppression..."
         variant="destructive"
+        isLoading={isDeleting}
       />
     </div>
   );

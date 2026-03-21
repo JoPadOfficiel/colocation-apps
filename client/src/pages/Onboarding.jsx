@@ -127,7 +127,7 @@ export default function Onboarding() {
                     <Users className="w-5 h-5 text-primary" />
                     Rejoindre une colocation
                   </CardTitle>
-                  <CardDescription>Entrez le code d'invitation reçu de vos colocataires</CardDescription>
+                  <CardDescription>Entrez le code d&apos;invitation reçu de vos colocataires</CardDescription>
                 </CardHeader>
               </Card>
             </div>
@@ -170,7 +170,7 @@ export default function Onboarding() {
                 <form onSubmit={handleJoin} className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="join-code" className="text-sm font-medium text-gray-700">
-                      Code d'invitation
+                      Code d&apos;invitation
                     </label>
                     <Input
                       id="join-code"
