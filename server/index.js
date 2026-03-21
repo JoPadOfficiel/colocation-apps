@@ -29,6 +29,17 @@ app.get('/api', (req, res) => {
   res.json({ message: 'ColocApp API is running' });
 });
 
+// Helper: Enrich colocation with full member data
+const enrichColocation = (coloc) => {
+  return {
+    ...coloc,
+    members: (coloc.members || []).map(memberId => {
+      const memberUser = users.find(u => u.id === memberId);
+      return memberUser ? stripPassword(memberUser) : { id: memberId, name: 'Inconnu', email: '' };
+    })
+  };
+};
+
 // Auth
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body || {};
@@ -39,7 +50,7 @@ app.post('/api/auth/login', (req, res) => {
   if (!user) {
     return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
   }
-  res.json({ data: { user: stripPassword(user), colocation } });
+  res.json({ data: { user: stripPassword(user), colocation: enrichColocation(colocation) } });
 });
 
 app.post('/api/auth/register', (req, res) => {
@@ -68,7 +79,7 @@ app.post('/api/auth/register', (req, res) => {
   colocation.members.push(newUser.id);
   db.save('users', users);
   db.save('colocation', colocation);
-  res.status(201).json({ data: { user: stripPassword(newUser), colocation } });
+  res.status(201).json({ data: { user: stripPassword(newUser), colocation: enrichColocation(colocation) } });
 });
 
 app.post('/api/auth/forgot-password', (req, res) => {
@@ -96,7 +107,7 @@ app.put('/api/users/:id', (req, res) => {
 
 // Colocation
 app.get('/api/colocation', (req, res) => {
-  res.json({ data: colocation });
+  res.json({ data: enrichColocation(colocation) });
 });
 
 app.post('/api/colocation', (req, res) => {

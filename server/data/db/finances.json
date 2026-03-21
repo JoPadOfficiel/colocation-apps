@@ -88,5 +88,14 @@
     "date": "2026-03-14T19:30:00Z",
     "paidBy": "user-3",
     "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-101",
+    "colocationId": "coloc-1",
+    "title": "Test: Concert de Jazz",
+    "amount": 68.5,
+    "date": "2026-03-21",
+    "paidBy": "user-1",
+    "type": "expense"
   }
 ]
