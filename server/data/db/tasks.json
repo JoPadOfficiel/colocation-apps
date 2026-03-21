@@ -58,5 +58,17 @@
     "category": "Courses",
     "recurrence": "none",
     "colocationId": "coloc-1"
+  },
+  {
+    "id": "task-100",
+    "colocationId": "coloc-1",
+    "title": "Tester Playwright et persistance",
+    "description": "Vérifier que les données sont sauvegardées correctement",
+    "category": "Autre",
+    "assignedTo": "user-1",
+    "dueDate": "2026-03-21T04:36:12.535Z",
+    "recurrence": "none",
+    "status": "À faire",
+    "createdBy": "user-1"
   }
 ]

@@ -328,7 +328,9 @@ export default function Tasks() {
                   onValueChange={(val) => setForm((f) => ({ ...f, assignedTo: val }))}
                 >
                   <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Assigner à..." />
+                    <span>
+                      {form.assignedTo === "none" || !form.assignedTo ? "Non assigné" : userMap[form.assignedTo] || "Assigner à..."}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Non assigné</SelectItem>

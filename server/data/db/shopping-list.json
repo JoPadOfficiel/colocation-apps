@@ -1,13 +1,5 @@
 [
   {
-    "id": "shop-1",
-    "itemName": "Lait",
-    "category": "Produits laitiers",
-    "isPurchased": false,
-    "assignedTo": "user-1",
-    "colocationId": "coloc-1"
-  },
-  {
     "id": "shop-2",
     "itemName": "Fromage râpé",
     "category": "Produits laitiers",

@@ -265,10 +265,9 @@ export default function Finances() {
       return;
     }
 
-    // Validation: paidBy doit exister dans colocation.members
-    const memberExists = colocation?.members?.some(m => m.id === formData.paidBy);
-    if (!memberExists) {
-      alert("Le membre sélectionné n'existe pas dans la colocation");
+    // Validation: paidBy doit être sélectionné
+    if (!formData.paidBy) {
+      alert("Veuillez sélectionner un membre");
       return;
     }
 
@@ -653,7 +652,9 @@ export default function Finances() {
                 required
               >
                 <SelectTrigger id="paidBy">
-                  <SelectValue placeholder="Sélectionner un membre" />
+                  <span>
+                    {formData.paidBy ? colocation?.members?.find(m => m.id === formData.paidBy)?.name || "Sélectionner un membre" : "Sélectionner un membre"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {colocation?.members?.map(member => (

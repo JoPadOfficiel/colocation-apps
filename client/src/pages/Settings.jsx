@@ -37,20 +37,28 @@ export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(true)
 
-  // F3: dep sur user?.role (stable primitive) au lieu de la dérivée isAdmin
+  // Load members from enriched colocation data or fetch separately
   useEffect(() => {
     if (!isAdmin) return
     setMembersLoading(true)
     setMembersError(false)
+
+    // Check if members are already enriched (have name property)
+    if (colocation?.members?.[0]?.name !== undefined) {
+      setMembers(colocation.members)
+      setMembersLoading(false)
+      return
+    }
+
+    // Otherwise fetch users and map them
     fetchUsers()
       .then((all) => {
-        // F5: filtrage par colocation.members (tableau d'ids)
         const ids = colocation?.members || []
         setMembers(ids.length ? all.filter((u) => ids.includes(u.id)) : all)
       })
       .catch(() => setMembersError(true))
       .finally(() => setMembersLoading(false))
-  }, [user?.role]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAdmin, colocation]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // F8: nettoyage du setTimeout au démontage
   useEffect(() => {

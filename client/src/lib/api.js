@@ -27,6 +27,21 @@ export function fetchColocation() {
   return request("/api/colocation")
 }
 
+export async function getMembers(colocationData) {
+  // If colocationData.members is already enriched (has 'name' property), use it
+  if (colocationData?.members?.[0]?.name) {
+    return colocationData.members;
+  }
+  // Otherwise fetch users and map them
+  try {
+    const allUsers = await fetchUsers();
+    const memberIds = colocationData?.members || [];
+    return memberIds.map(id => allUsers.find(u => u.id === id) || { id, name: 'Inconnu', email: '' });
+  } catch {
+    return colocationData?.members?.map(id => ({ id, name: 'Inconnu', email: '' })) || [];
+  }
+}
+
 export function fetchTasks() {
   return request("/api/tasks")
 }
