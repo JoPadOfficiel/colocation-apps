@@ -92,7 +92,9 @@ export default function Settings() {
           text: `Utilise ce code pour rejoindre notre colocation : ${code}`,
         })
         return
-      } catch {}
+      } catch (err) {
+        console.error("Sharing failed", err)
+      }
     }
     await handleCopy()
   }
@@ -117,7 +119,9 @@ export default function Settings() {
           const data = JSON.parse(saved)
           data.user = updated
           sessionStorage.setItem("colocapp_user", JSON.stringify(data))
-        } catch {}
+        } catch (err) {
+          console.error("Failed to update session storage", err)
+        }
       }
       setSuccess(true)
     } catch (err) {
@@ -188,7 +192,7 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-[#0e141b] mb-1">Code d'invitation</p>
+              <p className="text-sm font-medium text-[#0e141b] mb-1">Code d&apos;invitation</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm font-mono text-[#0e141b]">
                   {colocation?.invitationCode || "—"}

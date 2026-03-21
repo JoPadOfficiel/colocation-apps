@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react"
 import {
-  Plus,
   Search,
   ShoppingBag,
   Utensils,
@@ -108,6 +107,7 @@ export default function Food() {
   const [recipeErrors, setRecipeErrors] = useState({})
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [recipeToDelete, setRecipeToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Dietary constraints state
   const [newConstraint, setNewConstraint] = useState("")
@@ -275,6 +275,7 @@ export default function Food() {
 
   async function confirmDeleteRecipe() {
     if (!recipeToDelete) return
+    setIsDeleting(true)
     try {
       await deleteRecipe(recipeToDelete)
       setRecipes((prev) => prev.filter((r) => r.id !== recipeToDelete))
@@ -282,8 +283,9 @@ export default function Food() {
     } catch (err) {
       console.error("Delete recipe error:", err)
     } finally {
-      setRecipeToDelete(null)
+      setIsDeleting(false)
       setDeleteConfirmOpen(false)
+      setRecipeToDelete(null)
     }
   }
 
@@ -374,7 +376,7 @@ export default function Food() {
         <TabsContent value="menu" className="mt-6 space-y-6">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Aujourd'hui au menu</h2>
+              <h2 className="text-xl font-bold text-gray-900">Aujourd&apos;hui au menu</h2>
               <Button variant="outline" size="sm" onClick={shuffleMenu} className="gap-2">
                 <Sparkles className="w-4 h-4 text-amber-500" /> Changer de suggestion
               </Button>
@@ -612,7 +614,7 @@ export default function Food() {
             {filteredRecipes.length === 0 && (
               <div className="col-span-full text-center py-20 bg-gray-50 rounded-xl border border-dashed">
                 <Search className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500">Aucune recette trouvée pour "{searchQuery}"</p>
+                <p className="text-gray-500">Aucune recette trouvée pour &quot;{searchQuery}&quot;</p>
                 <Button variant="link" onClick={() => setSearchQuery("")}>Effacer la recherche</Button>
               </div>
             )}
@@ -699,11 +701,13 @@ export default function Food() {
           <ConfirmDialog
             open={deleteConfirmOpen}
             onOpenChange={setDeleteConfirmOpen}
-            title="Supprimer la recette ?"
-            description="Cette action est irréversible. La recette sera définitivement supprimée."
+            title="Supprimer la recette"
+            description="Êtes-vous sûr de vouloir supprimer cette recette ? Cette action est irréversible."
             onConfirm={confirmDeleteRecipe}
             confirmText="Supprimer"
+            loadingText="Suppression..."
             variant="destructive"
+            isLoading={isDeleting}
           />
         </TabsContent>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { Wallet, TrendingUp, TrendingDown, Plus, MoreVertical, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 import FinancesChart from "@/components/FinancesChart";
 
 export default function Finances() {
@@ -45,7 +45,7 @@ export default function Finances() {
   const [formErrors, setFormErrors] = useState({});
 
   // Fonction de calcul des métriques réutilisable (évite duplication)
-  const calculateMetrics = (financesData) => {
+  const calculateMetrics = useCallback((financesData) => {
     const nombreColocataires = colocation?.members?.length || 0;
     
     // Protection contre division par zéro
@@ -78,7 +78,7 @@ export default function Finances() {
     // TODO Story 5.3: Calculer depuis l'historique réel
     const tendanceCalculee = cagnotteActuelle * 0.18; // 18% de la cagnotte comme approximation
     setTendance(tendanceCalculee);
-  };
+  }, [colocation, user]);
 
   useEffect(() => {
     // Validation précoce des dépendances
@@ -115,7 +115,7 @@ export default function Finances() {
     };
 
     fetchFinances();
-  }, [colocation, user]);
+  }, [colocation, user, calculateMetrics]);
 
   const formatMontant = (montant) => {
     // Gestion des valeurs non finies (NaN, Infinity)
@@ -731,27 +731,18 @@ export default function Finances() {
         </DialogContent>
       </Dialog>
 
-      {/* AlertDialog Confirmation Suppression */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette dépense ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. La dépense "{expenseToDelete?.title}" sera définitivement supprimée.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              disabled={isSubmitting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isSubmitting ? "Suppression..." : "Supprimer"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ConfirmDialog Confirmation Suppression */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Supprimer cette dépense ?"
+        description={`Cette action est irréversible. La dépense "${expenseToDelete?.title || ''}" sera définitivement supprimée.`}
+        onConfirm={confirmDelete}
+        confirmText="Supprimer"
+        loadingText="Suppression..."
+        variant="destructive"
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }

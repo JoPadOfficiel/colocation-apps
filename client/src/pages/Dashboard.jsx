@@ -77,6 +77,15 @@ function ExpenseChart({ finances }) {
   )
 }
 
+function timeAgo(date) {
+  const diff = Date.now() - date.getTime()
+  const days = Math.floor(diff / 86400000)
+  if (days > 0) return `il y a ${days}j`
+  const hours = Math.floor(diff / 3600000)
+  if (hours > 0) return `il y a ${hours}h`
+  return "à l'instant"
+}
+
 function RecentActivity({ finances, tasks, users }) {
   const userMap = {}
   users.forEach((u) => { userMap[u.id] = u.name })
@@ -97,15 +106,6 @@ function RecentActivity({ finances, tasks, users }) {
   ]
     .sort((a, b) => b.date - a.date)
     .slice(0, 3)
-
-  function timeAgo(date) {
-    const diff = Date.now() - date.getTime()
-    const days = Math.floor(diff / 86400000)
-    if (days > 0) return `il y a ${days}j`
-    const hours = Math.floor(diff / 3600000)
-    if (hours > 0) return `il y a ${hours}h`
-    return "à l'instant"
-  }
 
   return (
     <Card>
@@ -205,7 +205,7 @@ export default function Dashboard() {
             Bonjour, {firstName} 👋
           </h1>
           <p className="text-gray-500 mt-1">
-            Voici ce qui se passe dans votre colocation aujourd'hui
+            Voici ce qui se passe dans votre colocation aujourd&apos;hui
           </p>
         </div>
         <Button onClick={() => navigate("/finances")} className="self-start sm:self-auto">
