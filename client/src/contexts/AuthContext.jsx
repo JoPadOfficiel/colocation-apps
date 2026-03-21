@@ -1,23 +1,33 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState } from "react"
 
 const AuthContext = createContext(null)
 
 function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [colocation, setColocation] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const saved = sessionStorage.getItem("colocapp_user")
     if (saved) {
       try {
         const data = JSON.parse(saved)
-        setUser(data.user)
-        setColocation(data.colocation)
-      } catch {}
+        return data.user || null
+      } catch {
+        // Ignored
+      }
     }
-    setLoading(false)
-  }, [])
+  })
+  const [colocation, setColocation] = useState(() => {
+    const saved = sessionStorage.getItem("colocapp_user")
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        return data.colocation || null
+      } catch {
+        // Ignored
+        return null
+      }
+    }
+    return null
+  })
+  const [loading] = useState(false)
 
   async function login(email, password) {
     const res = await fetch("/api/auth/login", {
@@ -75,7 +85,9 @@ function AuthProvider({ children }) {
         const data = JSON.parse(saved)
         data.colocation = coloc
         sessionStorage.setItem("colocapp_user", JSON.stringify(data))
-      } catch {}
+      } catch {
+        // Ignored
+      }
     }
   }
 
@@ -100,4 +112,4 @@ function useAuth() {
   return context
 }
 
-export { AuthProvider, useAuth }
+export { AuthContext, AuthProvider, useAuth }
