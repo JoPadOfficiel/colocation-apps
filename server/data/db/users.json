@@ -32,5 +32,15 @@
     "dietaryConstraints": [
       "sans gluten"
     ]
+  },
+  {
+    "id": "user-100",
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "password123",
+    "profilePhoto": "",
+    "role": "member",
+    "colocationId": "coloc-1",
+    "dietaryConstraints": []
   }
 ]

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -204,10 +204,11 @@ export default function Finances() {
   const monthlyData = calculateMonthlyData(finances);
 
   // Pagination logic avec protection contre division par zéro
-  const totalPages = finances.length > 0 ? Math.ceil(finances.length / itemsPerPage) : 1;
+  const sortedFinances = [...finances].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const totalPages = sortedFinances.length > 0 ? Math.ceil(sortedFinances.length / itemsPerPage) : 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedExpenses = finances.slice(startIndex, endIndex);
+  const paginatedExpenses = sortedFinances.slice(startIndex, endIndex);
 
   const handlePrevious = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -505,7 +506,7 @@ export default function Finances() {
           {finances.length > 0 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-[#4e7397]">
-                {startIndex + 1} à {Math.min(endIndex, finances.length)} sur {finances.length} résultats
+                {startIndex + 1} à {Math.min(endIndex, sortedFinances.length)} sur {sortedFinances.length} résultats
               </p>
               <div className="flex gap-2">
                 <Button
@@ -657,9 +658,9 @@ export default function Finances() {
                 required
               >
                 <SelectTrigger id="paidBy">
-                  <span>
-                    {formData.paidBy ? colocation?.members?.find(m => m.id === formData.paidBy)?.name || "Sélectionner un membre" : "Sélectionner un membre"}
-                  </span>
+                  <SelectValue>
+                    {formData.paidBy ? getUserName(formData.paidBy) : "Sélectionner un membre"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {colocation?.members?.map(member => (

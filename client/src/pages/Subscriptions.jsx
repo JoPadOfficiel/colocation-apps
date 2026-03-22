@@ -77,7 +77,7 @@ export default function Subscriptions() {
     loadData();
   }, []);
 
-  const totalCost = subscriptions.reduce((acc, sub) => acc + Number(sub.costMonthly || sub.coutMensuel || 0), 0);
+  const totalCost = subscriptions.reduce((acc, sub) => acc + Number(sub.monthlyPrice || sub.costMonthly || sub.coutMensuel || 0), 0);
   const formattedTotal = totalCost.toFixed(2).replace(".", ",");
 
   const openAddDialog = () => {
@@ -202,8 +202,9 @@ export default function Subscriptions() {
           {subscriptions.map((sub) => {
             const iconName = sub.icon || sub.icone || "movie";
             const typeBadge = sub.type || "SERVICE";
-            const price = Number(sub.costMonthly || sub.coutMensuel || 0).toFixed(2).replace(".", ",");
-            const date = sub.dateBilling || sub.datePrelevement || "N/A";
+            const price = Number(sub.monthlyPrice || sub.costMonthly || sub.coutMensuel || 0).toFixed(2).replace(".", ",");
+            const subDate = new Date(sub.nextWithdrawalDate || sub.dateBilling || sub.datePrelevement);
+            const formattedDate = isNaN(subDate.getTime()) ? "N/A" : subDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 
             return (
               <Card key={sub.id} className="shadow-card border-gray-100/60 overflow-hidden hover:shadow-md transition-shadow relative">
@@ -226,7 +227,7 @@ export default function Subscriptions() {
                       </div>
                     </div>
 
-                    <h3 className="text-lg font-bold text-[#0e141b] mb-1">{sub.nameService || sub.nomService}</h3>
+                    <h3 className="font-bold text-gray-900 leading-tight">{sub.serviceName || sub.nameService || sub.nomService}</h3>
                     <div className="flex items-baseline gap-1 mb-4">
                       <span className="text-2xl font-bold text-[#4799eb]">{price} €</span>
                       <span className="text-sm text-[#4e7397]">/mois</span>
@@ -236,14 +237,14 @@ export default function Subscriptions() {
                       <div className="flex items-center text-sm text-[#4e7397]">
                         <Calendar size={16} className="mr-2 opacity-80" />
                         <span>Prochain prélèvement :</span>
-                        <span className="ml-1 font-medium text-[#0e141b]">{date}</span>
+                        <span className="ml-1 font-medium text-[#0e141b]">{formattedDate}</span>
                       </div>
 
-                      {sub.placesLimit && (
+                      {(sub.sharedPlaces || sub.placesLimit) && (
                         <div className="flex items-center text-sm text-[#4e7397]">
                           <Users size={16} className="mr-2 opacity-80" />
                           <span>Places :</span>
-                          <span className="ml-1 font-medium text-[#0e141b]">{sub.placesUsed}/{sub.placesLimit}</span>
+                          <span className="ml-1 font-medium text-[#0e141b]">{sub.sharedPlaces || sub.placesUsed || 0}/{sub.sharedPlaces || sub.placesLimit || 0}</span>
                         </div>
                       )}
                     </div>

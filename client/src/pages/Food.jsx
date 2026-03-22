@@ -91,6 +91,7 @@ export default function Food() {
   // Shopping form state
   const [newItemName, setNewItemName] = useState("")
   const [newItemCategory, setNewItemCategory] = useState("Épicerie")
+  const [newItemAssignedTo, setNewItemAssignedTo] = useState("")
 
   // Recipes state
   const [searchQuery, setSearchQuery] = useState("")
@@ -146,10 +147,11 @@ export default function Food() {
         itemName: newItemName.trim(),
         category: newItemCategory,
         isPurchased: false,
-        assignedTo: user?.id
+        assignedTo: newItemAssignedTo || user?.id
       })
       setShoppingItems((prev) => [...prev, item])
       setNewItemName("")
+      setNewItemAssignedTo("")
     } catch (err) {
       console.error("Add shopping item error:", err)
     }
@@ -476,6 +478,19 @@ export default function Food() {
                     <SelectContent>
                       {SHOPPING_CATEGORIES.map(cat => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={newItemAssignedTo} onValueChange={setNewItemAssignedTo}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue>
+                      {newItemAssignedTo === '' || newItemAssignedTo === 'none' ? 'Pour qui ?' : (users.find(u => u.id === newItemAssignedTo)?.name || newItemAssignedTo)}
+                    </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Tous</SelectItem>
+                      {users.map(u => (
+                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
