@@ -4,7 +4,11 @@ async function request(url, options = {}) {
   if (!res.ok) {
     const text = await res.text()
     let message = "Request failed"
-    try { message = JSON.parse(text).error || message } catch {}
+    try {
+      message = JSON.parse(text).error || message
+    } catch (err) {
+      console.error("Failed to parse error response", err)
+    }
     throw new Error(message)
   }
   const json = await res.json()

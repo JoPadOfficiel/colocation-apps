@@ -5,8 +5,28 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { fetchSubscriptions } from "@/lib/api";
+import { Wallet, Trash2, Calendar, Users, Key, PlusCircle, Eye, EyeOff, Film, Wifi, Music, Star, Zap, CreditCard } from "lucide-react";
+import { fetchSubscriptions, createSubscription, updateSubscription, deleteSubscription } from "@/lib/api";
 import ConfirmDialog from "@/components/ConfirmDialog";
+
+// Helper to map old icon names to Lucide components
+const getIconComponent = (name) => {
+  const icons = {
+    movie: Film,
+    router: Wifi,
+    audiotrack: Music,
+    stars: Star,
+    bolt: Zap,
+    account_balance_wallet: Wallet,
+    calendar_today: Calendar,
+    group: Users,
+    key: Key,
+    add_circle: PlusCircle,
+    visibility: Eye,
+    visibility_off: EyeOff
+  };
+  return icons[name] || CreditCard;
+};
 
 // Fallback data if API fails
 const FALLBACK_SUBSCRIPTIONS = [
@@ -25,6 +45,7 @@ export default function Subscriptions() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const [currentSub, setCurrentSub] = useState(null);
@@ -37,7 +58,6 @@ export default function Subscriptions() {
       try {
         const data = await fetchSubscriptions();
         if (data && data.length > 0) {
-          // ensure data schema compatibility
           setSubscriptions(data.map(d => ({
             ...d,
             placesLimit: d.placesLimit || null,
@@ -47,7 +67,8 @@ export default function Subscriptions() {
         } else {
           setSubscriptions(FALLBACK_SUBSCRIPTIONS);
         }
-      } catch (_err) {
+      } catch (err) {
+        console.error("Failed to load subscriptions", err);
         setSubscriptions(FALLBACK_SUBSCRIPTIONS);
       } finally {
         setLoading(false);
@@ -94,11 +115,15 @@ export default function Subscriptions() {
   const handleDelete = async () => {
     if (currentSub) {
       setIsDeleting(true);
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setSubscriptions(subscriptions.filter(s => s.id !== currentSub.id));
-      setIsDeleting(false);
-      setIsConfirmOpen(false);
+      try {
+        await deleteSubscription(currentSub.id);
+        setSubscriptions(subscriptions.filter(s => s.id !== currentSub.id));
+        setIsConfirmOpen(false);
+      } catch (err) {
+        console.error("Failed to delete subscription", err);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -112,27 +137,30 @@ export default function Subscriptions() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
-
-    if (currentSub) {
-      // Edit
-      setSubscriptions(subscriptions.map(s =>
-        s.id === currentSub.id
-          ? { ...s, ...formData, costMonthly: Number(formData.costMonthly) }
-          : s
-      ));
-    } else {
-      // Add
-      const newSub = {
-        id: Date.now().toString(),
-        icon: "stars",
+    setIsSaving(true);
+    try {
+      const payload = {
         ...formData,
-        costMonthly: Number(formData.costMonthly)
+        costMonthly: Number(formData.costMonthly),
+        placesLimit: formData.placesLimit ? Number(formData.placesLimit) : null,
+        placesUsed: formData.placesUsed ? Number(formData.placesUsed) : null,
       };
-      setSubscriptions([...subscriptions, newSub]);
+
+      if (currentSub) {
+        const updated = await updateSubscription(currentSub.id, payload);
+        setSubscriptions(subscriptions.map(s => s.id === currentSub.id ? updated : s));
+      } else {
+        const created = await createSubscription(payload);
+        setSubscriptions([...subscriptions, created]);
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error("Failed to save subscription", err);
+    } finally {
+      setIsSaving(false);
     }
-    setIsDialogOpen(false);
   };
 
   return (
@@ -150,7 +178,7 @@ export default function Subscriptions() {
       <div className="bg-[#eef6fd] border border-[#4799eb]/20 text-[#0e141b] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-white p-3 rounded-full text-[#4799eb] shadow-sm">
-            <span className="material-symbols-outlined block text-2xl">account_balance_wallet</span>
+            <Wallet size={24} />
           </div>
           <div>
             <p className="text-sm font-medium text-[#4e7397]">Coût Mensuel Total</p>
@@ -182,14 +210,17 @@ export default function Subscriptions() {
                   <div className="p-6 flex-grow">
                     <div className="flex justify-between items-start mb-4">
                       <div className="bg-[#f6f7f8] text-[#4e7397] p-3 rounded-xl border border-gray-100">
-                        <span className="material-symbols-outlined block text-3xl">{iconName}</span>
+                        {(() => {
+                          const IconComp = getIconComponent(iconName);
+                          return <IconComp size={30} />;
+                        })()}
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <Badge variant="secondary" className="bg-[#f6f7f8] text-[#4e7397] font-semibold text-xs rounded-full px-3 py-1 border-0">
                           {typeBadge}
                         </Badge>
                         <button onClick={() => openConfirmDialog(sub)} className="text-red-400 hover:text-red-600 transition-colors">
-                          <span className="material-symbols-outlined text-sm">delete</span>
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
@@ -202,14 +233,14 @@ export default function Subscriptions() {
 
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-[#4e7397]">
-                        <span className="material-symbols-outlined text-base mr-2 opacity-80">calendar_today</span>
+                        <Calendar size={16} className="mr-2 opacity-80" />
                         <span>Prochain prélèvement :</span>
                         <span className="ml-1 font-medium text-[#0e141b]">{date}</span>
                       </div>
 
                       {sub.placesLimit && (
                         <div className="flex items-center text-sm text-[#4e7397]">
-                          <span className="material-symbols-outlined text-base mr-2 opacity-80">group</span>
+                          <Users size={16} className="mr-2 opacity-80" />
                           <span>Places :</span>
                           <span className="ml-1 font-medium text-[#0e141b]">{sub.placesUsed}/{sub.placesLimit}</span>
                         </div>
@@ -220,7 +251,7 @@ export default function Subscriptions() {
                   <div className="px-6 py-4 bg-[#f6f7f8] border-t border-gray-100 flex items-center justify-between mt-auto">
                     {sub.credentials ? (
                       <Button variant="ghost" size="sm" onClick={() => openDetailsDialog(sub)} className="text-[#4e7397] font-medium hover:text-[#4799eb] border border-transparent shadow-none px-0 hover:bg-transparent -ml-2">
-                        <span className="material-symbols-outlined mr-1 text-sm">key</span> Identifiants
+                        <Key size={14} className="mr-1" /> Identifiants
                       </Button>
                     ) : <div></div>}
                     <Button onClick={() => openEditDialog(sub)} variant="outline" size="sm" className="font-medium text-[#4e7397] hover:bg-white hover:text-[#4799eb] border-gray-200">
@@ -236,7 +267,7 @@ export default function Subscriptions() {
 
       <div className="flex justify-center mt-8 pb-4">
         <Button onClick={openAddDialog} variant="ghost" className="text-[#4e7397] hover:text-[#4799eb] hover:bg-transparent tracking-wide text-sm font-semibold flex items-center gap-2">
-          <span className="material-symbols-outlined text-xl">add_circle</span>
+          <PlusCircle size={20} />
           Nouvel abonnement
         </Button>
       </div>
@@ -319,7 +350,9 @@ export default function Subscriptions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} className="bg-[#4799eb] text-white hover:bg-[#3b82f6]">Enregistrer</Button>
+            <Button onClick={handleSave} disabled={isSaving} className="bg-[#4799eb] text-white hover:bg-[#3b82f6]">
+              {isSaving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -348,7 +381,7 @@ export default function Subscriptions() {
                   <span>{showPassword ? currentSub.credentials.pass : '••••••••••••'}</span>
                   <div className="flex gap-2">
                     <button className="text-gray-400 hover:text-gray-600" onClick={() => setShowPassword(!showPassword)}>
-                      <span className="material-symbols-outlined text-sm">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                     <button className="text-[#4799eb] hover:underline text-xs my-auto" onClick={() => navigator.clipboard.writeText(currentSub.credentials.pass)}>Copier</button>
                   </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, CheckSquare, Utensils, CreditCard, Menu } from 'lucide-react';
 
