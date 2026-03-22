@@ -170,7 +170,17 @@ export default function Tasks() {
   }
 
   // Filtered tasks
-  const filtered = tasks.filter((t) => {
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // Correctly extract the numeric part of the ID (e.g., 'task-1' -> 1)
+    const getNumId = (id) => {
+      if (!id) return 0;
+      const match = id.match(/\d+/);
+      return match ? parseInt(match[0]) : 0;
+    };
+    return getNumId(b.id) - getNumId(a.id);
+  });
+
+  const filtered = sortedTasks.filter((t) => {
     if (filter.status !== "all" && t.status !== filter.status) return false
     if (filter.assignee !== "all" && t.assignedTo !== filter.assignee) return false
     
@@ -337,9 +347,9 @@ export default function Tasks() {
                   onValueChange={(val) => setForm((f) => ({ ...f, assignedTo: val }))}
                 >
                   <SelectTrigger className="w-full bg-white">
-                    <span>
-                      {form.assignedTo === "none" || !form.assignedTo ? "Non assigné" : userMap[form.assignedTo] || "Assigner à..."}
-                    </span>
+                    <SelectValue>
+                      {form.assignedTo === 'none' ? 'Non assigné' : (users.find(u => u.id === form.assignedTo)?.name || form.assignedTo)}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Non assigné</SelectItem>

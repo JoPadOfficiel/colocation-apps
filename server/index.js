@@ -19,8 +19,15 @@ let subscriptions = db.load('subscriptions');
 let recipes = db.load('recipes');
 let shoppingList = db.load('shoppingList');
 
-let nextId = 100;
-const genId = (prefix) => `${prefix}-${nextId++}`;
+const getNextId = (items, prefix) => {
+  const maxId = items.reduce((max, item) => {
+    const match = String(item.id).match(/\d+/);
+    return match ? Math.max(max, parseInt(match[0])) : max;
+  }, 0);
+  return maxId + 1;
+};
+
+const genId = (items, prefix) => `${prefix}-${getNextId(items, prefix)}`;
 
 const stripPassword = ({ password, ...rest }) => rest;
 
@@ -66,7 +73,7 @@ app.post('/api/auth/register', (req, res) => {
     return res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
   }
   const newUser = {
-    id: genId('user'),
+    id: genId(users, 'user'),
     name,
     email: email.toLowerCase(),
     password,
@@ -134,7 +141,7 @@ app.get('/api/tasks', (req, res) => {
 });
 
 app.post('/api/tasks', (req, res) => {
-  const task = { id: genId('task'), colocationId: 'coloc-1', ...req.body };
+  const task = { id: genId(tasks, 'task'), colocationId: 'coloc-1', ...req.body };
   tasks.push(task);
   db.save('tasks', tasks);
   res.status(201).json({ data: task });
@@ -162,7 +169,7 @@ app.get('/api/finances', (req, res) => {
 });
 
 app.post('/api/finances', (req, res) => {
-  const finance = { id: genId('fin'), colocationId: 'coloc-1', ...req.body };
+  const finance = { id: genId(finances, 'fin'), colocationId: 'coloc-1', ...req.body };
   finances.push(finance);
   db.save('finances', finances);
   res.status(201).json({ data: finance });
@@ -190,7 +197,7 @@ app.get('/api/recipes', (req, res) => {
 });
 
 app.post('/api/recipes', (req, res) => {
-  const recipe = { id: genId('recipe'), colocationId: 'coloc-1', ...req.body };
+  const recipe = { id: genId(recipes, 'recipe'), colocationId: 'coloc-1', ...req.body };
   recipes.push(recipe);
   db.save('recipes', recipes);
   res.status(201).json({ data: recipe });
@@ -218,7 +225,7 @@ app.get('/api/shopping-list', (req, res) => {
 });
 
 app.post('/api/shopping-list', (req, res) => {
-  const item = { id: genId('shop'), colocationId: 'coloc-1', ...req.body };
+  const item = { id: genId(shoppingList, 'shop'), colocationId: 'coloc-1', ...req.body };
   shoppingList.push(item);
   db.save('shoppingList', shoppingList);
   res.status(201).json({ data: item });
@@ -246,7 +253,7 @@ app.get('/api/subscriptions', (req, res) => {
 });
 
 app.post('/api/subscriptions', (req, res) => {
-  const sub = { id: genId('sub'), colocationId: 'coloc-1', ...req.body };
+  const sub = { id: genId(subscriptions, 'sub'), colocationId: 'coloc-1', ...req.body };
   subscriptions.push(sub);
   db.save('subscriptions', subscriptions);
   res.status(201).json({ data: sub });

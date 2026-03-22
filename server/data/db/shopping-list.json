@@ -86,5 +86,37 @@
     "isPurchased": true,
     "assignedTo": "user-1",
     "colocationId": "coloc-1"
+  },
+  {
+    "id": "shop-100",
+    "colocationId": "coloc-1",
+    "itemName": "Saucisses",
+    "category": "Épicerie",
+    "isPurchased": false,
+    "assignedTo": "user-3"
+  },
+  {
+    "id": "shop-101",
+    "colocationId": "coloc-1",
+    "itemName": "Pommes",
+    "category": "Épicerie",
+    "isPurchased": false,
+    "assignedTo": "user-1"
+  },
+  {
+    "id": "shop-102",
+    "colocationId": "coloc-1",
+    "itemName": "Poires",
+    "category": "Épicerie",
+    "isPurchased": false,
+    "assignedTo": "user-1"
+  },
+  {
+    "id": "shop-103",
+    "colocationId": "coloc-1",
+    "itemName": "Bananes",
+    "category": "Épicerie",
+    "isPurchased": false,
+    "assignedTo": "user-2"
   }
 ]
