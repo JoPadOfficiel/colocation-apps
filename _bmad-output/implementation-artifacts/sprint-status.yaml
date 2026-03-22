@@ -102,7 +102,7 @@ development_status:
   epic-8-retrospective: optional
 
   # Epic 9: UX Polish & Validation (Tous)
-  epic-9: backlog
-  9-1-validation-formulaires-et-messages-derreur: backlog
-  9-2-pop-ups-de-confirmation-et-responsive-final: backlog
+  epic-9: done
+  9-1-validation-formulaires-et-messages-derreur: done
+  9-2-pop-ups-de-confirmation-et-responsive-final: done
   epic-9-retrospective: optional
