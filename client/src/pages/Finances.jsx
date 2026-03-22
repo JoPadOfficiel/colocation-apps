@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchFinances, createFinance, updateFinance, deleteFinance } from "@/lib/api";
 import FinancesChart from "@/components/FinancesChart";
@@ -43,9 +43,10 @@ export default function Finances() {
     date: "",
     paidBy: ""
   });
+  const [formErrors, setFormErrors] = useState({});
 
   // Fonction de calcul des métriques réutilisable (évite duplication)
-  const calculateMetrics = (financesData) => {
+  const calculateMetrics = useCallback((financesData) => {
     const nombreColocataires = colocation?.members?.length || 0;
     
     // Protection contre division par zéro
@@ -78,7 +79,7 @@ export default function Finances() {
     // TODO Story 5.3: Calculer depuis l'historique réel
     const tendanceCalculee = cagnotteActuelle * 0.18; // 18% de la cagnotte comme approximation
     setTendance(tendanceCalculee);
-  };
+  }, [colocation, user]);
 
   useEffect(() => {
     // Validation précoce des dépendances
@@ -102,7 +103,7 @@ export default function Finances() {
     };
 
     loadFinances();
-  }, [colocation, user]);
+  }, [colocation, user, calculateMetrics]);
 
   const formatMontant = (montant) => {
     // Gestion des valeurs non finies (NaN, Infinity)
@@ -238,6 +239,7 @@ export default function Finances() {
         paidBy: user?.id || ""
       });
     }
+    setFormErrors({});
     setIsDialogOpen(true);
   };
 
@@ -245,31 +247,31 @@ export default function Finances() {
     setIsDialogOpen(false);
     setEditingExpense(null);
     setFormData({ title: "", amount: "", date: "", paidBy: "" });
+    setFormErrors({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Prévenir les soumissions multiples
     if (isSubmitting) return;
     
-    // Validation
-    if (!formData.title || !formData.amount || !formData.date || !formData.paidBy) {
-      alert("Tous les champs sont requis");
-      return;
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = "Le titre est requis";
+    if (!formData.date) newErrors.date = "La date est requise";
+    if (!formData.paidBy) newErrors.paidBy = "Le payeur est requis";
+    else if (!colocation?.members?.some(m => m.id === formData.paidBy)) {
+      newErrors.paidBy = "Le membre sélectionné n'existe pas";
     }
 
     const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      alert("Le montant doit être supérieur à 0");
-      return;
+    if (!formData.amount) {
+      newErrors.amount = "Le montant est requis";
+    } else if (isNaN(amount) || amount <= 0) {
+      newErrors.amount = "Le montant doit être supérieur à 0";
     }
 
-    // Validation: paidBy doit être sélectionné
-    if (!formData.paidBy) {
-      alert("Veuillez sélectionner un membre");
-      return;
-    }
+    setFormErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsSubmitting(true);
     try {
@@ -620,6 +622,7 @@ export default function Finances() {
                 placeholder="Ex: Courses Carrefour"
                 required
               />
+              {formErrors.title && <p className="text-sm text-red-500 mt-1">{formErrors.title}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Montant (€)</Label>
@@ -633,6 +636,7 @@ export default function Finances() {
                 placeholder="0.00"
                 required
               />
+              {formErrors.amount && <p className="text-sm text-red-500 mt-1">{formErrors.amount}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
@@ -643,6 +647,7 @@ export default function Finances() {
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 required
               />
+              {formErrors.date && <p className="text-sm text-red-500 mt-1">{formErrors.date}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidBy">Payé par</Label>
@@ -664,6 +669,7 @@ export default function Finances() {
                   ))}
                 </SelectContent>
               </Select>
+              {formErrors.paidBy && <p className="text-sm text-red-500 mt-1">{formErrors.paidBy}</p>}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog} disabled={isSubmitting}>
@@ -677,27 +683,18 @@ export default function Finances() {
         </DialogContent>
       </Dialog>
 
-      {/* AlertDialog Confirmation Suppression */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette dépense ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. La dépense "{expenseToDelete?.title}" sera définitivement supprimée.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              disabled={isSubmitting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isSubmitting ? "Suppression..." : "Supprimer"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ConfirmDialog Confirmation Suppression */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Supprimer cette dépense ?"
+        description={`Cette action est irréversible. La dépense "${expenseToDelete?.title || ''}" sera définitivement supprimée.`}
+        onConfirm={confirmDelete}
+        confirmText="Supprimer"
+        loadingText="Suppression..."
+        variant="destructive"
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }

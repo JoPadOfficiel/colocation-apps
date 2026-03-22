@@ -4,30 +4,28 @@ const AuthContext = createContext(null)
 
 function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
+    if (typeof window === "undefined") return null
     const saved = sessionStorage.getItem("colocapp_user")
-    if (saved) {
-      try {
-        const data = JSON.parse(saved)
-        return data.user || null
-      } catch {
-        // Ignored
-      }
+    try {
+      return saved ? JSON.parse(saved).user : null
+    } catch (err) {
+      console.error("Failed to parse saved user", err)
+      return null
     }
   })
+
   const [colocation, setColocation] = useState(() => {
+    if (typeof window === "undefined") return null
     const saved = sessionStorage.getItem("colocapp_user")
-    if (saved) {
-      try {
-        const data = JSON.parse(saved)
-        return data.colocation || null
-      } catch {
-        // Ignored
-        return null
-      }
+    try {
+      return saved ? JSON.parse(saved).colocation : null
+    } catch (err) {
+      console.error("Failed to parse saved colocation", err)
+      return null
     }
-    return null
   })
-  const [loading] = useState(false)
+
+  const loading = false
 
   async function login(email, password) {
     const res = await fetch("/api/auth/login", {
@@ -85,8 +83,8 @@ function AuthProvider({ children }) {
         const data = JSON.parse(saved)
         data.colocation = coloc
         sessionStorage.setItem("colocapp_user", JSON.stringify(data))
-      } catch {
-        // Ignored
+      } catch (err) {
+        console.error("Failed to update colocation in session", err)
       }
     }
   }

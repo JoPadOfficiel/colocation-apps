@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing } from "lucide-react"
 import { updateUser, fetchUsers } from "@/lib/api"
 
 function getInitials(name) {
@@ -100,7 +101,9 @@ export default function Settings() {
           text: `Utilise ce code pour rejoindre notre colocation : ${code}`,
         })
         return
-      } catch {}
+      } catch (err) {
+        console.error("Sharing failed", err)
+      }
     }
     await handleCopy()
   }
@@ -125,7 +128,9 @@ export default function Settings() {
           const data = JSON.parse(saved)
           data.user = updated
           sessionStorage.setItem("colocapp_user", JSON.stringify(data))
-        } catch {}
+        } catch (err) {
+          console.error("Failed to update session storage", err)
+        }
       }
       setSuccess(true)
     } catch (err) {
@@ -150,7 +155,7 @@ export default function Settings() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <label className="text-sm font-medium text-[#0e141b]" htmlFor="nom">
-                <span className="material-symbols-outlined align-middle text-base mr-1 text-[#4e7397]">person</span>
+                <User size={16} className="inline-block align-middle mr-1 text-[#4e7397]" />
                 Nom complet
               </label>
               <Input
@@ -164,7 +169,7 @@ export default function Settings() {
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-[#0e141b]" htmlFor="email">
-                <span className="material-symbols-outlined align-middle text-base mr-1 text-[#4e7397]">mail</span>
+                <Mail size={16} className="inline-block align-middle mr-2 text-[#4e7397]" />
                 Adresse e-mail
               </label>
               <Input
@@ -189,14 +194,14 @@ export default function Settings() {
       {isAdmin && (
         <Card className="shadow-sm border border-gray-100 mt-6">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-[#0e141b]">
-              <span className="material-symbols-outlined align-middle text-base mr-1 text-[#4e7397]">admin_panel_settings</span>
+            <CardTitle className="text-lg font-semibold text-[#0e141b] flex items-center gap-2">
+              <ShieldCheck size={18} className="text-[#4e7397]" />
               Ma Colocation
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-[#0e141b] mb-1">Code d'invitation</p>
+              <p className="text-sm font-medium text-[#0e141b] mb-1">Code d&apos;invitation</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm font-mono text-[#0e141b]">
                   {colocation?.invitationCode || "—"}
@@ -205,11 +210,11 @@ export default function Settings() {
                   type="button"
                   variant="outline"
                   onClick={handleCopy}
-                  className="shrink-0"
-                >
-                  <span className="material-symbols-outlined text-base mr-1">content_copy</span>
-                  {copied ? "Copié !" : copyError ? "Erreur" : "Copier"}
-                </Button>
+                   className="shrink-0 flex items-center gap-1"
+                 >
+                   <Copy size={16} />
+                   {copied ? "Copié !" : copyError ? "Erreur" : "Copier"}
+                 </Button>
               </div>
               {copyError && (
                 <p className="text-xs text-[#ef4444] mt-1">Copie impossible. Copiez le code manuellement.</p>
@@ -242,25 +247,25 @@ export default function Settings() {
               )}
             </div>
 
-            <Button type="button" variant="outline" onClick={handleInvite}>
-              <span className="material-symbols-outlined text-base mr-1">person_add</span>
-              Inviter un colocataire
-            </Button>
+             <Button type="button" variant="outline" onClick={handleInvite} className="flex items-center gap-2">
+               <UserPlus size={18} />
+               Inviter un colocataire
+             </Button>
           </CardContent>
         </Card>
       )}
 
       <Card className="shadow-sm border border-gray-100 mt-6">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold text-[#0e141b]">
-            <span className="material-symbols-outlined align-middle text-base mr-1 text-[#4e7397]">notifications</span>
-            Notifications
-          </CardTitle>
+           <CardTitle className="text-lg font-semibold text-[#0e141b] flex items-center gap-2">
+             <Bell size={18} className="text-[#4e7397]" />
+             Notifications
+           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="flex items-start gap-3 flex-1">
-              <span className="material-symbols-outlined text-xl text-[#4e7397] mt-0.5">mail</span>
+             <div className="flex items-start gap-3 flex-1">
+               <Mail size={20} className="text-[#4e7397] mt-0.5" />
               <div>
                 <Label className="text-sm font-medium text-[#0e141b]">Notifications par e-mail</Label>
                 <p className="text-xs text-[#4e7397] mt-1">Résumé hebdomadaire des dépenses et tâches</p>
@@ -274,8 +279,8 @@ export default function Settings() {
           </div>
 
           <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="flex items-start gap-3 flex-1">
-              <span className="material-symbols-outlined text-xl text-[#4e7397] mt-0.5">notifications_active</span>
+             <div className="flex items-start gap-3 flex-1">
+               <BellRing size={20} className="text-[#4e7397] mt-0.5" />
               <div>
                 <Label className="text-sm font-medium text-[#0e141b]">Notifications Push</Label>
                 <p className="text-xs text-[#4e7397] mt-1">Alertes immédiates pour nouvelles tâches et messages</p>

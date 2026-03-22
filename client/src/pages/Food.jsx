@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react"
 import {
-  Plus,
   Search,
   ShoppingBag,
   Utensils,
@@ -105,8 +104,10 @@ export default function Food() {
     dietaryConstraints: [],
     isFavorite: false
   })
+  const [recipeErrors, setRecipeErrors] = useState({})
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [recipeToDelete, setRecipeToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Dietary constraints state
   const [newConstraint, setNewConstraint] = useState("")
@@ -182,6 +183,7 @@ export default function Food() {
       dietaryConstraints: [],
       isFavorite: false
     })
+    setRecipeErrors({})
     setEditingRecipe(null)
     setRecipeDialogOpen(false)
   }
@@ -207,6 +209,7 @@ export default function Food() {
       dietaryConstraints: [],
       isFavorite: false
     })
+    setRecipeErrors({})
     setRecipeDialogOpen(true)
   }
 
@@ -220,11 +223,25 @@ export default function Food() {
       dietaryConstraints: recipe.dietaryConstraints || [],
       isFavorite: recipe.isFavorite || false
     })
+    setRecipeErrors({})
     setRecipeDialogOpen(true)
+  }
+
+  const validateRecipeForm = () => {
+    const newErrors = {};
+    if (!recipeForm.dishName.trim()) newErrors.dishName = "Le nom du plat est requis";
+    if (!recipeForm.prepTime || parseInt(recipeForm.prepTime) <= 0) newErrors.prepTime = "Le temps de préparation doit être > 0";
+    if (!recipeForm.portions || parseInt(recipeForm.portions) <= 0) newErrors.portions = "Le nombre de portions doit être > 0";
+    if (!recipeForm.ingredients.trim()) newErrors.ingredients = "Les ingrédients sont requis";
+    
+    setRecipeErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   }
 
   async function handleRecipeSubmit(e) {
     e.preventDefault()
+    if (!validateRecipeForm()) return;
+
     const payload = {
       ...recipeForm,
       prepTime: parseInt(recipeForm.prepTime) || 0,
@@ -258,6 +275,7 @@ export default function Food() {
 
   async function confirmDeleteRecipe() {
     if (!recipeToDelete) return
+    setIsDeleting(true)
     try {
       await deleteRecipe(recipeToDelete)
       setRecipes((prev) => prev.filter((r) => r.id !== recipeToDelete))
@@ -265,8 +283,9 @@ export default function Food() {
     } catch (err) {
       console.error("Delete recipe error:", err)
     } finally {
-      setRecipeToDelete(null)
+      setIsDeleting(false)
       setDeleteConfirmOpen(false)
+      setRecipeToDelete(null)
     }
   }
 
@@ -357,7 +376,7 @@ export default function Food() {
         <TabsContent value="menu" className="mt-6 space-y-6">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Aujourd'hui au menu</h2>
+              <h2 className="text-xl font-bold text-gray-900">Aujourd&apos;hui au menu</h2>
               <Button variant="outline" size="sm" onClick={shuffleMenu} className="gap-2">
                 <Sparkles className="w-4 h-4 text-amber-500" /> Changer de suggestion
               </Button>
@@ -595,7 +614,7 @@ export default function Food() {
             {filteredRecipes.length === 0 && (
               <div className="col-span-full text-center py-20 bg-gray-50 rounded-xl border border-dashed">
                 <Search className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500">Aucune recette trouvée pour "{searchQuery}"</p>
+                <p className="text-gray-500">Aucune recette trouvée pour &quot;{searchQuery}&quot;</p>
                 <Button variant="link" onClick={() => setSearchQuery("")}>Effacer la recherche</Button>
               </div>
             )}
@@ -618,6 +637,7 @@ export default function Food() {
                     onChange={(e) => setRecipeForm(f => ({ ...f, dishName: e.target.value }))}
                     required
                   />
+                  {recipeErrors.dishName && <p className="text-sm text-red-500 mt-1">{recipeErrors.dishName}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -629,6 +649,7 @@ export default function Food() {
                       onChange={(e) => setRecipeForm(f => ({ ...f, prepTime: e.target.value }))}
                       required
                     />
+                    {recipeErrors.prepTime && <p className="text-sm text-red-500 mt-1">{recipeErrors.prepTime}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Portions</label>
@@ -639,6 +660,7 @@ export default function Food() {
                       onChange={(e) => setRecipeForm(f => ({ ...f, portions: e.target.value }))}
                       required
                     />
+                    {recipeErrors.portions && <p className="text-sm text-red-500 mt-1">{recipeErrors.portions}</p>}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -649,6 +671,7 @@ export default function Food() {
                     onChange={(e) => setRecipeForm(f => ({ ...f, ingredients: e.target.value }))}
                     required
                   />
+                  {recipeErrors.ingredients && <p className="text-sm text-red-500 mt-1">{recipeErrors.ingredients}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Contraintes alimentaires</label>
@@ -678,11 +701,13 @@ export default function Food() {
           <ConfirmDialog
             open={deleteConfirmOpen}
             onOpenChange={setDeleteConfirmOpen}
-            title="Supprimer la recette ?"
-            description="Cette action est irréversible. La recette sera définitivement supprimée."
+            title="Supprimer la recette"
+            description="Êtes-vous sûr de vouloir supprimer cette recette ? Cette action est irréversible."
             onConfirm={confirmDeleteRecipe}
             confirmText="Supprimer"
+            loadingText="Suppression..."
             variant="destructive"
+            isLoading={isDeleting}
           />
         </TabsContent>
 
