@@ -658,9 +658,7 @@ export default function Finances() {
                 required
               >
                 <SelectTrigger id="paidBy">
-                  <SelectValue>
-                    {formData.paidBy ? getUserName(formData.paidBy) : "Sélectionner un membre"}
-                  </SelectValue>
+                  <SelectValue placeholder="Sélectionner un membre" />
                 </SelectTrigger>
                 <SelectContent>
                   {colocation?.members?.map(member => (

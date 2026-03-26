@@ -72,5 +72,15 @@
     "role": "member",
     "colocationId": "coloc-1",
     "dietaryConstraints": []
+  },
+  {
+    "id": "user-104",
+    "name": "Browser Tester",
+    "email": "browser-tester@test.com",
+    "password": "Password123!",
+    "profilePhoto": "",
+    "role": "member",
+    "colocationId": "coloc-1",
+    "dietaryConstraints": []
   }
 ]
