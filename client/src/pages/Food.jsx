@@ -94,6 +94,7 @@ export default function Food() {
   const [newItemAssignedTo, setNewItemAssignedTo] = useState("")
 
   // Recipes state
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState(null)
@@ -151,6 +152,7 @@ export default function Food() {
       })
       setShoppingItems((prev) => [...prev, item])
       setNewItemName("")
+      setIsAddDialogOpen(false)
       setNewItemAssignedTo("")
     } catch (err) {
       console.error("Add shopping item error:", err)
@@ -463,42 +465,67 @@ export default function Food() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <form onSubmit={handleAddShoppingItem} className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 flex gap-2">
-                  <Input
-                    placeholder="Ajouter un article..."
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Select value={newItemCategory} onValueChange={setNewItemCategory}>
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Catégorie" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SHOPPING_CATEGORIES.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={newItemAssignedTo} onValueChange={setNewItemAssignedTo}>
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue>
-                      {newItemAssignedTo === '' || newItemAssignedTo === 'none' ? 'Pour qui ?' : (users.find(u => u.id === newItemAssignedTo)?.name || newItemAssignedTo)}
-                    </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Tous</SelectItem>
-                      {users.map(u => (
-                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit">
-                  <PlusCircle className="w-4 h-4 mr-2" /> Ajouter
+
+              <div className="flex justify-start">
+                <Button onClick={() => setIsAddDialogOpen(true)}>
+                  <PlusCircle className="w-4 h-4 mr-2" /> Ajouter un article
                 </Button>
-              </form>
+              </div>
+
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Ajouter un article</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAddShoppingItem} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Nom de l&apos;article</label>
+                      <Input
+                        placeholder="Ex: Lait, Œufs, Pain..."
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Catégorie</label>
+                        <Select value={newItemCategory} onValueChange={setNewItemCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Catégorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SHOPPING_CATEGORIES.map(cat => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Pour qui ?</label>
+                        <Select value={newItemAssignedTo} onValueChange={setNewItemAssignedTo}>
+                          <SelectTrigger>
+                            <SelectValue>
+                              {newItemAssignedTo === '' || newItemAssignedTo === 'none' ? 'Tous' : (users.find(u => u.id === newItemAssignedTo)?.name || newItemAssignedTo)}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Tous</SelectItem>
+                            {users.map(u => (
+                              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Annuler</Button>
+                      <Button type="submit">Ajouter</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
 
               <div className="space-y-6 mt-4">
                 {Object.entries(itemsByCategory).map(([category, items]) => (
