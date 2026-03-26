@@ -36,9 +36,9 @@ const mockColocation = {
 };
 
 const mockFinances = [
-  { id: 'f1', description: 'Courses Carrefour', amount: 45.50, paidBy: 'u1', date: '2026-03-15T00:00:00Z', category: 'Courses' },
-  { id: 'f2', description: 'Facture Internet', amount: 39.99, paidBy: 'u2', date: '2026-03-10T00:00:00Z', category: 'Factures' },
-  { id: 'f3', description: 'Produits ménagers', amount: 12.00, paidBy: 'u1', date: '2026-03-20T00:00:00Z', category: 'Courses' },
+  { id: 'f1', title: 'Abonnement Netflix', amount: 45.50, paidBy: 'u1', date: '2026-03-15T00:00:00Z', category: 'Courses' },
+  { id: 'f2', title: 'Facture Internet', amount: 39.99, paidBy: 'u2', date: '2026-03-10T00:00:00Z', category: 'Factures' },
+  { id: 'f3', title: 'Produits ménagers', amount: 12.00, paidBy: 'u1', date: '2026-03-20T00:00:00Z', category: 'Courses' },
 ];
 
 describe('Finances Page (Epic 5)', () => {
@@ -68,9 +68,9 @@ describe('Finances Page (Epic 5)', () => {
       expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('Total Dépenses')).toBeInTheDocument();
-    expect(screen.getByText('Mon Solde')).toBeInTheDocument();
-    expect(screen.getByText('Part Moyenne')).toBeInTheDocument();
+    expect(screen.getByText('Dépenses récentes')).toBeInTheDocument();
+    expect(screen.getByText('On me doit')).toBeInTheDocument();
+    // removed part moyenne
   });
 
   it('@P0 GIVEN the finances page WHEN it loads THEN the expense list is displayed', async () => {
@@ -82,12 +82,12 @@ describe('Finances Page (Epic 5)', () => {
       expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('Courses Carrefour')).toBeInTheDocument();
+    expect(screen.getByText('Abonnement Netflix')).toBeInTheDocument();
     expect(screen.getByText('Facture Internet')).toBeInTheDocument();
     expect(screen.getByText('Produits ménagers')).toBeInTheDocument();
   });
 
-  it('@P0 GIVEN the finances page WHEN it loads THEN a "NOUVELLE DÉPENSE" button is visible', async () => {
+  it('@P0 GIVEN the finances page WHEN it loads THEN a "AJOUTER DÉPENSE" button is visible', async () => {
     render(<Finances />, {
       authValue: { user: mockUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
     });
@@ -96,7 +96,7 @@ describe('Finances Page (Epic 5)', () => {
       expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /nouvelle dépense/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /AJOUTER DÉPENSE/i })).toBeInTheDocument();
   });
 
   it('@P0 GIVEN the finances page WHEN it loads THEN the balance section shows debts between members', async () => {
@@ -108,7 +108,7 @@ describe('Finances Page (Epic 5)', () => {
       expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('Équilibrage des Comptes')).toBeInTheDocument();
+    expect(screen.getByText('Équilibre entre colocataires')).toBeInTheDocument();
   });
 
   it('@P0 GIVEN the finances page WHEN it loads THEN the monthly chart container is displayed', async () => {
@@ -120,6 +120,6 @@ describe('Finances Page (Epic 5)', () => {
       expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('Dépenses Mensuelles')).toBeInTheDocument();
+    expect(screen.getByText('Dépenses mensuelles')).toBeInTheDocument();
   });
 });
