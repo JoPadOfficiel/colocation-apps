@@ -42,5 +42,15 @@
     "role": "member",
     "colocationId": "coloc-1",
     "dietaryConstraints": []
+  },
+  {
+    "id": "user-101",
+    "name": "Yohan Test",
+    "email": "yohan@test.fr",
+    "password": "password123",
+    "profilePhoto": "",
+    "role": "member",
+    "colocationId": "coloc-1",
+    "dietaryConstraints": []
   }
 ]

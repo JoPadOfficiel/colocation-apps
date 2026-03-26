@@ -97,5 +97,14 @@
     "date": "2026-03-21",
     "paidBy": "user-1",
     "type": "expense"
+  },
+  {
+    "id": "fin-102",
+    "colocationId": "coloc-1",
+    "title": "Test Playwright - Dépense",
+    "amount": 50,
+    "date": "2026-03-26",
+    "paidBy": "user-1",
+    "type": "expense"
   }
 ]

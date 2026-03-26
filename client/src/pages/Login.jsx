@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, user, loading: authLoading } = useAuth()
+  const { login, user, loading: authLoading, updateColocation } = useAuth()
 
   useEffect(() => {
     if (!authLoading && user) navigate("/dashboard", { replace: true })
@@ -64,7 +64,25 @@ export default function Login() {
       setJoinError("Veuillez entrer un code d'invitation")
       return
     }
-    setJoinError("Fonctionnalité disponible prochainement (Story 2.3)")
+    setLoading(true)
+    try {
+      const res = await fetch("/api/colocation/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: joinCode.trim().toUpperCase(), userId: user?.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setJoinError(json.error || "Code invalide")
+        return
+      }
+      if (updateColocation) updateColocation(json.data)
+      navigate("/dashboard", { replace: true })
+    } catch {
+      setJoinError("Erreur réseau, réessayez")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

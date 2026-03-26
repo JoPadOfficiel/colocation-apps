@@ -94,5 +94,17 @@
     "recurrence": "none",
     "status": "À faire",
     "createdBy": "user-1"
+  },
+  {
+    "id": "task-102",
+    "colocationId": "coloc-1",
+    "title": "Test Playwright - Nouvelle tâche",
+    "description": "",
+    "category": "Autre",
+    "assignedTo": "user-1",
+    "dueDate": "2026-03-26T09:46:36.257Z",
+    "recurrence": "none",
+    "status": "À faire",
+    "createdBy": "user-1"
   }
 ]
