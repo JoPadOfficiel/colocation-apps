@@ -127,12 +127,23 @@ app.post('/api/colocation', (req, res) => {
 });
 
 app.post('/api/colocation/join', (req, res) => {
-  const { code } = req.body || {};
+  const { code, userId } = req.body || {};
   if (!code) return res.status(400).json({ error: 'Code requis' });
   if (colocation.invitationCode.toUpperCase() !== code.toUpperCase()) {
     return res.status(404).json({ error: 'Code d\'invitation invalide' });
   }
-  res.json({ data: colocation });
+  if (userId) {
+    const user = users.find((u) => u.id === userId);
+    if (user) {
+      if (!colocation.members.includes(userId)) {
+        colocation.members.push(userId);
+        db.save('colocation', colocation);
+      }
+      user.colocationId = colocation.id;
+      db.save('users', users);
+    }
+  }
+  res.json({ data: enrichColocation(colocation) });
 });
 
 // Tasks CRUD

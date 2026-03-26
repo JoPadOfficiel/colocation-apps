@@ -63,7 +63,7 @@ export default function Onboarding() {
       const res = await fetch("/api/colocation/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
+        body: JSON.stringify({ code: joinCode.trim().toUpperCase(), userId: user?.id }),
       })
       const json = await res.json()
       if (!res.ok) {
