@@ -505,9 +505,7 @@ export default function Food() {
                         <label className="text-sm font-medium">Pour qui ?</label>
                         <Select value={newItemAssignedTo} onValueChange={setNewItemAssignedTo}>
                           <SelectTrigger>
-                            <SelectValue>
-                              {newItemAssignedTo === '' || newItemAssignedTo === 'none' ? 'Tous' : (users.find(u => u.id === newItemAssignedTo)?.name || newItemAssignedTo)}
-                            </SelectValue>
+                            <SelectValue placeholder="Tous" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Tous</SelectItem>
