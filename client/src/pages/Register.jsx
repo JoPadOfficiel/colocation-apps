@@ -136,24 +136,6 @@ export default function Register() {
                   {loading ? "Inscription..." : "S'INSCRIRE"}
                 </Button>
 
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">ou</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Button type="button" variant="outline" className="w-full" disabled>
-                    Continuer avec Google
-                  </Button>
-                  <Button type="button" variant="outline" className="w-full" disabled>
-                    Continuer avec Facebook
-                  </Button>
-                </div>
-
                 <p className="text-center text-sm text-gray-600">
                   Déjà un compte ?{" "}
                   <Link to="/login" className="text-primary hover:underline">
