@@ -139,7 +139,8 @@ export default function Tasks() {
   }
 
   async function toggleStatus(task) {
-    const newStatus = task.status === "Terminée" ? "À faire" : "Terminée"
+    const cycle = { "À faire": "En cours", "En cours": "Terminée", "Terminée": "À faire" }
+    const newStatus = cycle[task.status] || "À faire"
     try {
       const updated = await updateTask(task.id, { status: newStatus })
       setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)))
@@ -234,16 +235,18 @@ export default function Tasks() {
     return true
   })
 
-  const todo = filtered.filter((t) => t.status !== "Terminée")
+  const todo = filtered.filter((t) => t.status === "À faire")
+  const inProgress = filtered.filter((t) => t.status === "En cours")
   const done = filtered.filter((t) => t.status === "Terminée")
 
   // Stats per user
   const stats = {}
-  users.forEach((u) => { stats[u.id] = { total: 0, done: 0 } })
+  users.forEach((u) => { stats[u.id] = { total: 0, inProgress: 0, done: 0 } })
   tasks.forEach((t) => {
     if (stats[t.assignedTo]) {
       stats[t.assignedTo].total++
       if (t.status === "Terminée") stats[t.assignedTo].done++
+      if (t.status === "En cours") stats[t.assignedTo].inProgress++
     }
   })
 
@@ -433,7 +436,7 @@ export default function Tasks() {
       </Dialog>
 
       {/* Task Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
             À Faire <Badge variant="secondary">{todo.length}</Badge>
@@ -452,6 +455,27 @@ export default function Tasks() {
               />
             ))}
             {todo.length === 0 && <p className="text-sm text-gray-400">Aucune tâche</p>}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            En cours <Badge variant="secondary" className="bg-orange-100 text-orange-700">{inProgress.length}</Badge>
+          </h2>
+          <div className="space-y-2">
+            {inProgress.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                userMap={userMap}
+                onToggle={() => toggleStatus(task)}
+                onEdit={() => startEdit(task)}
+                onDelete={() => promptDelete(task.id)}
+                selected={selectedTasks.includes(task.id)}
+                onSelect={() => toggleSelect(task.id)}
+              />
+            ))}
+            {inProgress.length === 0 && <p className="text-sm text-gray-400">Aucune tâche en cours</p>}
           </div>
         </div>
 
@@ -501,6 +525,7 @@ export default function Tasks() {
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>{userStats.total} assignées</span>
+                    {userStats.inProgress > 0 && <span className="text-orange-600 font-medium">{userStats.inProgress} en cours</span>}
                     <span className="text-green-600 font-medium">{userStats.done} terminées</span>
                   </div>
                 </div>

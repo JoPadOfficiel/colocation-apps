@@ -9,8 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+const STATUS_STYLES = {
+  "Terminée": { button: "bg-green-100 border-green-500 text-green-600", dot: "bg-green-500 scale-100" },
+  "En cours": { button: "bg-orange-100 border-orange-400 text-orange-600", dot: "bg-orange-400 scale-100" },
+}
+
 export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelect }) {
   const isDone = task.status === "Terminée"
+  const statusStyle = STATUS_STYLES[task.status] || { button: "border-gray-300 hover:border-primary/50 text-gray-300", dot: "bg-transparent scale-0" }
   const date = task.dueDate ? new Date(task.dueDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""
 
   return (
@@ -25,10 +31,9 @@ export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, se
             />
             <button
               onClick={onToggle}
-              className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                ${isDone ? "bg-green-100 border-green-500 text-green-600" : "border-gray-300 hover:border-primary/50 text-gray-300"}`}
+              className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${statusStyle.button}`}
             >
-              <div className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${isDone ? "bg-green-500 scale-100" : "bg-transparent scale-0"}`} />
+              <div className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${statusStyle.dot}`} />
             </button>
           </div>
           <div className="flex-1 min-w-0 py-0.5">
@@ -41,7 +46,7 @@ export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, se
                 </Badge>
               )}
             </div>
-            <p className={`text-sm font-semibold leading-snug ${isDone ? "line-through text-gray-400" : "text-gray-900"}`}>
+            <p className={`text-sm font-semibold leading-snug ${isDone ? "line-through text-gray-400" : task.status === "En cours" ? "text-orange-800" : "text-gray-900"}`}>
               {task.title}
             </p>
             <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
