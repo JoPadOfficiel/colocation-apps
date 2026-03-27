@@ -1,17 +1,19 @@
-{
-  "id": "coloc-1",
-  "name": "Colocation Jopad & Co",
-  "invitationCode": "COLO-7829-X",
-  "totalFund": 245.5,
-  "createdAt": "2025-09-01T10:00:00Z",
-  "members": [
-    "user-1",
-    "user-2",
-    "user-3",
-    "user-100",
-    "user-101",
-    "user-102",
-    "user-103",
-    "user-104"
-  ]
-}
+[
+  {
+    "id": "coloc-1",
+    "name": "Colocation Jopad & Co",
+    "invitationCode": "COLO-7829-X",
+    "totalFund": 245.5,
+    "createdAt": "2025-09-01T10:00:00Z",
+    "members": [
+      "user-1",
+      "user-2",
+      "user-3",
+      "user-100",
+      "user-101",
+      "user-102",
+      "user-103",
+      "user-104"
+    ]
+  }
+]

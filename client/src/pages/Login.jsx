@@ -8,11 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, user, loading: authLoading, updateColocation } = useAuth()
+  const { login, user, colocation, loading: authLoading, updateColocation } = useAuth()
 
   useEffect(() => {
-    if (!authLoading && user) navigate("/dashboard", { replace: true })
-  }, [user, authLoading, navigate])
+    if (!authLoading && user) {
+      navigate(colocation ? "/dashboard" : "/onboarding", { replace: true })
+    }
+  }, [user, colocation, authLoading, navigate])
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -44,7 +46,7 @@ export default function Login() {
     try {
       const result = await login(email.trim().toLowerCase(), password)
       if (result.success) {
-        navigate("/dashboard", { replace: true })
+        navigate(result.needsOnboarding ? "/onboarding" : "/dashboard", { replace: true })
       } else {
         setError(result.error)
       }

@@ -46,9 +46,9 @@ function AuthProvider({ children }) {
       return { success: false, error: "Données utilisateur manquantes" }
     }
     setUser(json.data.user)
-    setColocation(json.data.colocation)
+    setColocation(json.data.colocation || null)
     sessionStorage.setItem("colocapp_user", JSON.stringify(json.data))
-    return { success: true }
+    return { success: true, needsOnboarding: !json.data.colocation }
   }
 
   async function register(name, email, password) {
@@ -70,9 +70,9 @@ function AuthProvider({ children }) {
       return { success: false, error: "Données utilisateur manquantes" }
     }
     setUser(json.data.user)
-    setColocation(json.data.colocation || null)
-    sessionStorage.setItem("colocapp_user", JSON.stringify(json.data))
-    return { success: true }
+    setColocation(null)
+    sessionStorage.setItem("colocapp_user", JSON.stringify({ ...json.data, colocation: null }))
+    return { success: true, needsOnboarding: true }
   }
 
   function updateColocation(coloc) {

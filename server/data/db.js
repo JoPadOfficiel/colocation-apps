@@ -20,11 +20,16 @@ if (!fs.existsSync(DB_DIR)) {
 // Initialize from mockData if files don't exist
 const mockData = require('./mockData');
 
+// mockData uses `colocations` (array) but the file key is `colocation`
+function getMockValue(key) {
+  if (key === 'colocation') return mockData.colocations;
+  return mockData[key];
+}
+
 function ensureFile(key) {
   const filePath = FILES[key];
   if (!fs.existsSync(filePath)) {
-    const data = Array.isArray(mockData[key]) ? mockData[key] : mockData[key];
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(filePath, JSON.stringify(getMockValue(key), null, 2), 'utf8');
   }
 }
 
@@ -32,10 +37,16 @@ function load(key) {
   ensureFile(key);
   try {
     const content = fs.readFileSync(FILES[key], 'utf8');
-    return JSON.parse(content);
+    const parsed = JSON.parse(content);
+    // Backward compat: if colocation.json is a single object, wrap in array
+    if (key === 'colocation' && !Array.isArray(parsed)) {
+      return [parsed];
+    }
+    return parsed;
   } catch (err) {
     console.error(`Error loading ${key}:`, err);
-    return Array.isArray(mockData[key]) ? [...mockData[key]] : mockData[key];
+    const fallback = getMockValue(key);
+    return Array.isArray(fallback) ? [...fallback] : fallback;
   }
 }
 

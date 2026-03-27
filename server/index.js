@@ -11,7 +11,7 @@ app.use(cors({
 app.use(express.json());
 
 // Load data from persistent storage
-let colocation = db.load('colocation');
+let colocations = db.load('colocation'); // always an array
 let users = db.load('users');
 let tasks = db.load('tasks');
 let finances = db.load('finances');
@@ -41,11 +41,25 @@ const enrichColocation = (coloc) => {
   return {
     ...coloc,
     members: (coloc.members || []).map(memberId => {
-      const memberUser = users.find(u => u.id === memberId);
-      return memberUser ? stripPassword(memberUser) : { id: memberId, name: 'Inconnu', email: '' };
+      // members can be a string ID or an object {userId, role}
+      const id = typeof memberId === 'object' ? memberId.userId : memberId;
+      const memberUser = users.find(u => u.id === id);
+      return memberUser ? stripPassword(memberUser) : { id, name: 'Inconnu', email: '' };
     })
   };
 };
+
+// Helper: generate unique invitation code
+function genInvitationCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code;
+  do {
+    const body = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const suffix = chars[Math.floor(Math.random() * chars.length)];
+    code = `COLO-${body}-${suffix}`;
+  } while (colocations.some(c => c.invitationCode === code));
+  return code;
+}
 
 // Auth
 app.post('/api/auth/login', (req, res) => {
@@ -57,7 +71,10 @@ app.post('/api/auth/login', (req, res) => {
   if (!user) {
     return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
   }
-  res.json({ data: { user: stripPassword(user), colocation: enrichColocation(colocation) } });
+  const userColoc = user.colocationId
+    ? (colocations.find(c => c.id === user.colocationId) || null)
+    : null;
+  res.json({ data: { user: stripPassword(user), colocation: userColoc ? enrichColocation(userColoc) : null } });
 });
 
 app.post('/api/auth/register', (req, res) => {
@@ -79,14 +96,12 @@ app.post('/api/auth/register', (req, res) => {
     password,
     profilePhoto: '',
     role: 'member',
-    colocationId: 'coloc-1',
+    colocationId: null,
     dietaryConstraints: [],
   };
   users.push(newUser);
-  colocation.members.push(newUser.id);
   db.save('users', users);
-  db.save('colocation', colocation);
-  res.status(201).json({ data: { user: stripPassword(newUser), colocation: enrichColocation(colocation) } });
+  res.status(201).json({ data: { user: stripPassword(newUser), colocation: null } });
 });
 
 app.post('/api/auth/forgot-password', (req, res) => {
@@ -114,36 +129,60 @@ app.put('/api/users/:id', (req, res) => {
 
 // Colocation
 app.get('/api/colocation', (req, res) => {
-  res.json({ data: enrichColocation(colocation) });
+  res.json({ data: colocations.map(enrichColocation) });
 });
 
-app.post('/api/colocation', (req, res) => {
-  const { name } = req.body || {};
-  if (!name) return res.status(400).json({ error: 'Nom requis' });
-  const code = `COLO-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 3).toUpperCase()}`;
-  Object.assign(colocation, { name, invitationCode: code });
-  db.save('colocation', colocation);
-  res.status(201).json({ data: colocation });
+app.get('/api/colocation/:id', (req, res) => {
+  const coloc = colocations.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+  res.json({ data: enrichColocation(coloc) });
 });
 
 app.post('/api/colocation/join', (req, res) => {
   const { code, userId } = req.body || {};
   if (!code) return res.status(400).json({ error: 'Code requis' });
-  if (colocation.invitationCode.toUpperCase() !== code.toUpperCase()) {
+  const coloc = colocations.find(c => c.invitationCode.toUpperCase() === code.toUpperCase());
+  if (!coloc) {
     return res.status(404).json({ error: 'Code d\'invitation invalide' });
   }
   if (userId) {
     const user = users.find((u) => u.id === userId);
     if (user) {
-      if (!colocation.members.includes(userId)) {
-        colocation.members.push(userId);
-        db.save('colocation', colocation);
+      const alreadyMember = coloc.members.some(m => {
+        const id = typeof m === 'object' ? m.userId : m;
+        return id === userId;
+      });
+      if (!alreadyMember) {
+        coloc.members.push(userId);
+        db.save('colocation', colocations);
       }
-      user.colocationId = colocation.id;
+      user.colocationId = coloc.id;
       db.save('users', users);
     }
   }
-  res.json({ data: enrichColocation(colocation) });
+  res.json({ data: enrichColocation(coloc) });
+});
+
+app.post('/api/colocation', (req, res) => {
+  const { name, creatorId } = req.body || {};
+  if (!name || !creatorId) return res.status(400).json({ error: 'name et creatorId requis' });
+  const newColoc = {
+    id: genId(colocations, 'coloc'),
+    name,
+    invitationCode: genInvitationCode(),
+    totalFund: 0,
+    createdAt: new Date().toISOString(),
+    members: [{ userId: creatorId, role: 'admin' }],
+  };
+  colocations.push(newColoc);
+  db.save('colocation', colocations);
+  // Update user's colocationId
+  const creator = users.find(u => u.id === creatorId);
+  if (creator) {
+    creator.colocationId = newColoc.id;
+    db.save('users', users);
+  }
+  res.status(201).json({ data: enrichColocation(newColoc) });
 });
 
 // Tasks CRUD

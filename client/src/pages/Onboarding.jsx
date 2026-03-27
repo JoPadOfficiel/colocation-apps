@@ -34,7 +34,7 @@ export default function Onboarding() {
       const res = await fetch("/api/colocation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: colocName.trim() }),
+        body: JSON.stringify({ name: colocName.trim(), creatorId: user?.id }),
       })
       const json = await res.json()
       if (!res.ok) {

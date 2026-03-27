@@ -1,11 +1,13 @@
-const colocation = {
-  id: 'coloc-1',
-  name: 'Colocation Jopad & Co',
-  invitationCode: 'COLO-7829-X',
-  totalFund: 245.50,
-  createdAt: '2025-09-01T10:00:00Z',
-  members: ['user-1', 'user-2', 'user-3'],
-};
+const colocations = [
+  {
+    id: 'coloc-1',
+    name: 'Colocation Jopad & Co',
+    invitationCode: 'COLO-7829-X',
+    totalFund: 245.50,
+    createdAt: '2025-09-01T10:00:00Z',
+    members: ['user-1', 'user-2', 'user-3'],
+  },
+];
 
 const users = [
   {
@@ -317,7 +319,7 @@ const shoppingList = [
 ];
 
 module.exports = {
-  colocation,
+  colocations,
   users,
   tasks,
   finances,
