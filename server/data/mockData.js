@@ -19,6 +19,8 @@ const users = [
     role: 'admin',
     colocationId: 'coloc-1',
     dietaryConstraints: [],
+    emailNotifications: true,
+    pushNotifications: true,
   },
   {
     id: 'user-2',
@@ -29,6 +31,8 @@ const users = [
     role: 'member',
     colocationId: 'coloc-1',
     dietaryConstraints: ['végétarienne'],
+    emailNotifications: true,
+    pushNotifications: true,
   },
   {
     id: 'user-3',
@@ -39,6 +43,8 @@ const users = [
     role: 'member',
     colocationId: 'coloc-1',
     dietaryConstraints: ['sans gluten'],
+    emailNotifications: true,
+    pushNotifications: true,
   },
 ];
 

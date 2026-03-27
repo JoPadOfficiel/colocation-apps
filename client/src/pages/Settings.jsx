@@ -42,9 +42,9 @@ export default function Settings() {
   const [copyError, setCopyError] = useState(false)
   const copyTimeoutRef = useRef(null)
 
-  // Notifications state
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [pushNotifications, setPushNotifications] = useState(true)
+  // Notifications state — initialized from persisted user data
+  const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true)
+  const [pushNotifications, setPushNotifications] = useState(user?.pushNotifications ?? true)
 
   // Load members from enriched colocation data or fetch separately
   useEffect(() => {
@@ -114,6 +114,28 @@ export default function Settings() {
       }
     }
     await handleCopy()
+  }
+
+  async function handleToggleEmail(checked) {
+    const prev = emailNotifications
+    setEmailNotifications(checked)
+    try {
+      const updated = await apiUpdateUser(user.id, { emailNotifications: checked })
+      updateUser(updated)
+    } catch {
+      setEmailNotifications(prev)
+    }
+  }
+
+  async function handleTogglePush(checked) {
+    const prev = pushNotifications
+    setPushNotifications(checked)
+    try {
+      const updated = await apiUpdateUser(user.id, { pushNotifications: checked })
+      updateUser(updated)
+    } catch {
+      setPushNotifications(prev)
+    }
   }
 
   async function handleSubmit(e) {
@@ -363,7 +385,7 @@ export default function Settings() {
             </div>
             <Switch
               checked={emailNotifications}
-              onCheckedChange={setEmailNotifications}
+              onCheckedChange={handleToggleEmail}
               className="ml-2"
             />
           </div>
@@ -378,7 +400,7 @@ export default function Settings() {
             </div>
             <Switch
               checked={pushNotifications}
-              onCheckedChange={setPushNotifications}
+              onCheckedChange={handleTogglePush}
               className="ml-2"
             />
           </div>
