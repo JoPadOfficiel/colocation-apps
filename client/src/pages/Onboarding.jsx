@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import JoinConfirmDialog from "@/components/JoinConfirmDialog"
 
 export default function Onboarding() {
   const navigate = useNavigate()
@@ -15,6 +16,8 @@ export default function Onboarding() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [createdCode, setCreatedCode] = useState(null)
+  const [previewData, setPreviewData] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   if (colocation) {
     navigate("/dashboard", { replace: true })
@@ -50,7 +53,7 @@ export default function Onboarding() {
     }
   }
 
-  async function handleJoin(e) {
+  async function handlePreview(e) {
     e.preventDefault()
     setError(null)
     if (!joinCode.trim()) {
@@ -60,19 +63,45 @@ export default function Onboarding() {
     if (loading) return
     setLoading(true)
     try {
-      const res = await fetch("/api/colocation/join", {
+      const res = await fetch("/api/colocation/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: joinCode.trim().toUpperCase(), userId: user?.id }),
+        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase() }),
       })
       const json = await res.json()
       if (!res.ok) {
         setError(json.error || "Code invalide")
         return
       }
+      setPreviewData(json.data)
+      setDialogOpen(true)
+    } catch {
+      setError("Erreur réseau")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleConfirmJoin() {
+    if (loading) return
+    setLoading(true)
+    try {
+      const res = await fetch("/api/colocation/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase(), userId: user?.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setDialogOpen(false)
+        setError(json.error || "Erreur lors de la jonction")
+        return
+      }
+      setDialogOpen(false)
       if (updateColocation) updateColocation(json.data)
       navigate("/dashboard", { replace: true })
     } catch {
+      setDialogOpen(false)
       setError("Erreur réseau")
     } finally {
       setLoading(false)
@@ -162,35 +191,44 @@ export default function Onboarding() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Rejoindre une colocation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleJoin} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="join-code" className="text-sm font-medium text-gray-700">
-                      Code d&apos;invitation
-                    </label>
-                    <Input
-                      id="join-code"
-                      placeholder="COLO-XXXX-X"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value)}
-                    />
-                  </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => { setMode(null); setError(null) }}>
-                      Retour
-                    </Button>
-                    <Button type="submit" className="flex-1" disabled={loading}>
-                      {loading ? "Connexion..." : "Rejoindre"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rejoindre une colocation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePreview} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="join-code" className="text-sm font-medium text-gray-700">
+                        Code d&apos;invitation
+                      </label>
+                      <Input
+                        id="join-code"
+                        placeholder="COLO-XXXX-X"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value)}
+                      />
+                    </div>
+                    {error && <p className="text-sm text-red-500">{error}</p>}
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" onClick={() => { setMode(null); setError(null) }}>
+                        Retour
+                      </Button>
+                      <Button type="submit" className="flex-1" disabled={loading}>
+                        {loading ? "Vérification..." : "Vérifier le code"}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+              <JoinConfirmDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                colocationData={previewData}
+                onConfirm={handleConfirmJoin}
+                loading={loading}
+              />
+            </>
           )}
         </div>
       </main>

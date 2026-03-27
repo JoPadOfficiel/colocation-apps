@@ -126,24 +126,43 @@ app.post('/api/colocation', (req, res) => {
   res.status(201).json({ data: colocation });
 });
 
+app.post('/api/colocation/preview', (req, res) => {
+  const { invitationCode } = req.body || {};
+  if (!invitationCode) return res.status(400).json({ error: 'invitationCode requis' });
+  const list = Array.isArray(colocation) ? colocation : [colocation];
+  const coloc = list.find(c => c.invitationCode === invitationCode);
+  if (!coloc) return res.status(404).json({ error: "Code d'invitation invalide" });
+  const members = coloc.members.map(memberId => {
+    const user = users.find(u => u.id === memberId);
+    return { name: user?.name || 'Inconnu', role: user?.role || 'member' };
+  });
+  res.json({ data: { id: coloc.id, name: coloc.name, memberCount: members.length, members } });
+});
+
 app.post('/api/colocation/join', (req, res) => {
-  const { code, userId } = req.body || {};
-  if (!code) return res.status(400).json({ error: 'Code requis' });
-  if (colocation.invitationCode.toUpperCase() !== code.toUpperCase()) {
-    return res.status(404).json({ error: 'Code d\'invitation invalide' });
+  const { invitationCode, code, userId } = req.body || {};
+  const resolvedCode = invitationCode || code;
+  if (!resolvedCode) return res.status(400).json({ error: 'invitationCode requis' });
+  if (!userId) return res.status(400).json({ error: 'userId requis' });
+
+  const list = Array.isArray(colocation) ? colocation : [colocation];
+  const coloc = list.find(c => c.invitationCode.toUpperCase() === resolvedCode.toUpperCase());
+  if (!coloc) return res.status(404).json({ error: "Code d'invitation invalide" });
+
+  if (coloc.members.includes(userId)) {
+    return res.status(400).json({ error: 'Vous êtes déjà membre de cette colocation' });
   }
-  if (userId) {
-    const user = users.find((u) => u.id === userId);
-    if (user) {
-      if (!colocation.members.includes(userId)) {
-        colocation.members.push(userId);
-        db.save('colocation', colocation);
-      }
-      user.colocationId = colocation.id;
-      db.save('users', users);
-    }
+
+  coloc.members.push(userId);
+  db.save('colocation', Array.isArray(colocation) ? list : coloc);
+
+  const user = users.find(u => u.id === userId);
+  if (user) {
+    user.colocationId = coloc.id;
+    db.save('users', users);
   }
-  res.json({ data: enrichColocation(colocation) });
+
+  res.json({ data: enrichColocation(coloc) });
 });
 
 // Tasks CRUD
