@@ -37,6 +37,10 @@ export function fetchColocation() {
   return request("/api/colocation")
 }
 
+export function updateColocation(id, data) {
+  return request(`/api/colocation/${id}`, { method: "PUT", body: JSON.stringify(data) })
+}
+
 export async function getMembers(colocationData) {
   // If colocationData.members is already enriched (has 'name' property), use it
   if (colocationData?.members?.[0]?.name) {
