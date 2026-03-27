@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -652,22 +651,17 @@ export default function Finances() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidBy">Payé par</Label>
-              <Select
+              <select
+                id="paidBy"
                 value={formData.paidBy}
-                onValueChange={(value) => setFormData({ ...formData, paidBy: value })}
-                required
+                onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <SelectTrigger id="paidBy">
-                  <SelectValue placeholder="Sélectionner un membre" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colocation?.members?.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Sélectionner le payeur</option>
+                {colocation?.members?.map(member => (
+                  <option key={member.id} value={member.id}>{member.name}</option>
+                ))}
+              </select>
               {formErrors.paidBy && <p className="text-sm text-red-500 mt-1">{formErrors.paidBy}</p>}
             </div>
             <DialogFooter>
