@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchFinances, createFinance, updateFinance, deleteFinance, fetchColocation, updateColocation as apiUpdateColocation } from "@/lib/api";
@@ -744,18 +745,20 @@ export default function Finances() {
               {formErrors.date && <p className="text-sm text-red-500 mt-1">{formErrors.date}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paidBy">Payé par</Label>
-              <select
-                id="paidBy"
+              <Label>Payé par</Label>
+              <Select
                 value={formData.paidBy}
-                onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onValueChange={(val) => setFormData({ ...formData, paidBy: val })}
               >
-                <option value="">Sélectionner le payeur</option>
-                {colocation?.members?.map(member => (
-                  <option key={member.id} value={member.id}>{member.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sélectionner le payeur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {colocation?.members?.map(member => (
+                    <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {formErrors.paidBy && <p className="text-sm text-red-500 mt-1">{formErrors.paidBy}</p>}
             </div>
             <div className="flex items-center justify-between">
