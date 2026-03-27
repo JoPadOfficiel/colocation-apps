@@ -2,6 +2,10 @@
 stepsCompleted: [1, 2, 3, 4]
 status: 'complete'
 completedAt: '2026-03-19'
+lastEdited: '2026-03-27'
+editHistory:
+  - date: '2026-03-27'
+    changes: 'Ajout de 4 epics de correction (10-13) suite à audit complet des bugs : isolation données, finances, réglages, tâches/dashboard'
 inputDocuments:
   - "_bmad-output/planning-artifacts/prd.md"
   - "_bmad-output/planning-artifacts/architecture.md"
@@ -631,3 +635,422 @@ So that **je ne supprime rien par accident et l'app marche bien sur mobile**.
 **Given** je suis sur n'importe quel écran
 **When** je passe de desktop à mobile (ou inverse)
 **Then** le layout s'adapte sans scroll horizontal et sans perte de fonctionnalité
+
+---
+
+# Epics de Correction — Sprint Bugfix (ajoutées le 2026-03-27)
+
+Les epics 10 à 13 corrigent les bugs critiques identifiés lors de l'audit fonctionnel complet de l'application. Elles sont ordonnées par priorité : l'isolation des données (Epic 10) est un prérequis à toutes les autres corrections.
+
+### Epic 10 : Isolation des Données & Suppression des Données Mockées (🔴 CRITIQUE)
+Chaque colocation doit avoir ses propres données isolées. Les API doivent filtrer par `colocationId`. Les données hardcodées et mockées identiques pour tous doivent être supprimées au profit de vraies données saisies via l'interface et persistées dans le JSON DB.
+**FRs impactées :** FR3, FR4, FR7-FR15, FR16-FR24, FR25-FR31, FR39-FR43 | **Dev :** Jopad
+
+### Epic 11 : Finances — Cagnotte, Dépenses & Graphiques (🔴 CRITIQUE)
+La cagnotte commune doit être fonctionnelle (ajout d'argent, mise à jour), les dépenses partagées vs personnelles doivent être distinguées, les tarifs doivent se mettre à jour, et le graphique doit afficher l'historique multi-mois.
+**FRs impactées :** FR25-FR31, FR12, FR14 | **Dev :** Jopad
+
+### Epic 12 : Réglages — Gestion des Membres, Profil & Compte (🟠 MAJEUR)
+Tous les boutons de la page Réglages doivent fonctionner : modifier profil (nom, email, mot de passe), gérer les membres (ajouter, modifier rôle, virer), supprimer un compte, supprimer une colocation, persister les notifications, et corriger le flux "Rejoindre une colocation".
+**FRs impactées :** FR44-FR48, FR4 | **Dev :** Jopad
+
+### Epic 13 : Tâches, Dashboard & Composants UI (🟡 MOYEN)
+Corriger les composants Select dans les Dialog, les bulk actions manquantes sur les tâches (supprimer en masse, marquer "done" en masse), le toggle statut qui perd "En cours", et le rafraîchissement du dashboard.
+**FRs impactées :** FR16-FR24, FR7-FR15 | **Dev :** Jopad
+
+### FR Coverage Map — Epics de Correction
+
+| FR impactée | Epic Correction | Bug |
+|-------------|----------------|-----|
+| FR3, FR4 | Epic 10, 12 | Colocations se mélangent, flux rejoindre cassé |
+| FR7-FR15 | Epic 10, 13 | Dashboard affiche données non isolées, graphique mars uniquement |
+| FR12, FR31 | Epic 11 | Graphique finances = un seul mois |
+| FR14, FR29 | Epic 11 | Équilibre financier mélangé entre colocations |
+| FR16-FR24 | Epic 10, 13 | Tâches non isolées, bulk actions incomplètes, toggle statut cassé |
+| FR25-FR31 | Epic 10, 11 | Cagnotte inaccessible, dépenses non isolées, tendance fake |
+| FR39-FR43 | Epic 10 | Abonnements non isolés par colocation |
+| FR44-FR48 | Epic 12 | Profil non modifiable, membres non gérables, suppression compte morte |
+
+---
+
+## Epic 10 : Isolation des Données & Suppression des Données Mockées
+
+Chaque colocation doit avoir ses propres données isolées. Actuellement, `colocationId: 'coloc-1'` est hardcodé partout et tous les GET retournent toutes les données sans filtre.
+
+### Story 10.1 : Filtrage API par colocationId
+
+As a **colocataire**,
+I want **que les données affichées soient uniquement celles de ma colocation**,
+So that **je ne vois pas les tâches, dépenses ou membres d'une autre colocation**.
+
+**Acceptance Criteria:**
+
+**Given** je suis connecté dans la colocation "Appart Jopad"
+**When** je consulte les tâches, finances, abonnements ou recettes
+**Then** seules les données liées à ma colocation s'affichent
+**And** les données des autres colocations ne sont jamais visibles
+
+**Given** un GET est envoyé à `/api/tasks`, `/api/finances`, `/api/subscriptions`, `/api/recipes`, `/api/shopping`
+**When** le header ou query param `colocationId` est fourni
+**Then** l'API retourne uniquement les enregistrements dont `colocationId` correspond
+**And** sans `colocationId`, l'API retourne une erreur 400
+
+**Tâches techniques :**
+- Ajouter un paramètre `colocationId` (query param ou header) à tous les GET
+- Filtrer tous les tableaux par `colocationId` dans chaque route
+- Côté client : envoyer `colocationId` depuis `useAuth().colocation.id` dans chaque appel API
+- Supprimer le hardcode `colocationId: 'coloc-1'` dans les POST — utiliser la valeur du client
+
+### Story 10.2 : Création de colocation avec données vierges
+
+As a **utilisateur**,
+I want **que quand je crée une colocation, elle démarre avec des données vierges**,
+So that **je ne vois pas des données pré-remplies identiques pour tout le monde**.
+
+**Acceptance Criteria:**
+
+**Given** je crée une nouvelle colocation
+**When** j'accède au dashboard
+**Then** les widgets affichent 0 tâches, 0€ cagnotte, 0 articles courses, 0 abonnements
+**And** aucune donnée mockée n'est pré-chargée
+
+**Given** un autre utilisateur crée sa propre colocation
+**When** il consulte ses données
+**Then** il voit ses propres données, pas les miennes
+
+**Tâches techniques :**
+- Route `POST /api/colocation` : créer une colocation vierge (totalFund: 0, members: [créateur])
+- Générer un `invitationCode` unique au format `COLO-XXXX-X`
+- Ne plus seed de données mockées pour les nouvelles colocations
+- Conserver les données mockées uniquement pour `coloc-1` (démo)
+
+### Story 10.3 : Flux "Rejoindre une colocation" fonctionnel
+
+As a **utilisateur connecté sans colocation**,
+I want **rejoindre une colocation existante via un code d'invitation et voir une page/popup de confirmation**,
+So that **je suis correctement ajouté à la bonne colocation avec un feedback clair**.
+
+**Acceptance Criteria:**
+
+**Given** je suis connecté mais sans colocation
+**When** je saisis un code d'invitation valide (ex: COLO-7829-X) et clique "Rejoindre"
+**Then** une popup/page de confirmation affiche le nom de la colocation et ses membres actuels
+**And** après confirmation, je suis ajouté comme membre et redirigé vers le dashboard de cette colocation
+
+**Given** je saisis un code d'invitation invalide
+**When** je clique "Rejoindre"
+**Then** un message d'erreur s'affiche : "Code d'invitation invalide"
+
+**Given** je suis déjà membre d'une colocation
+**When** je tente de rejoindre une autre colocation
+**Then** un message m'informe que je dois quitter ma colocation actuelle d'abord
+
+**Tâches techniques :**
+- Route `POST /api/colocation/join` : valider le code, ajouter l'utilisateur aux members, retourner les infos colocation
+- Côté client : dialog de confirmation avec nom colocation + liste membres avant de confirmer
+- Mettre à jour `AuthContext` et `sessionStorage` avec la nouvelle colocation
+
+---
+
+## Epic 11 : Finances — Cagnotte, Dépenses & Graphiques
+
+La gestion financière est non fonctionnelle : impossible d'alimenter la cagnotte, pas de distinction dépenses partagées/personnelles, graphique limité à un mois, tendance fictive.
+
+### Story 11.1 : Alimenter la cagnotte commune
+
+As a **colocataire**,
+I want **pouvoir ajouter de l'argent à la cagnotte commune**,
+So that **la cagnotte reflète les contributions réelles de chaque membre**.
+
+**Acceptance Criteria:**
+
+**Given** je suis sur la page Finances
+**When** je clique "Ajouter à la cagnotte" et saisis un montant (ex: 50€)
+**Then** la cagnotte commune augmente de 50€
+**And** une entrée est ajoutée dans l'historique : "Contribution cagnotte — 50€ — [mon nom] — [date]"
+**And** la card "Cagnotte Commune" se met à jour immédiatement
+
+**Given** je tente d'ajouter 0€ ou un montant négatif
+**When** je valide
+**Then** le formulaire refuse la saisie avec un message d'erreur
+
+**Tâches techniques :**
+- Route `PUT /api/colocation/:id` : mettre à jour `totalFund` (incrément)
+- Route `POST /api/finances` avec `type: 'contribution'` pour tracer la contribution
+- Bouton "Ajouter à la cagnotte" + Dialog avec champ montant dans Finances.jsx
+- Recalculer et afficher la cagnotte après chaque opération
+
+### Story 11.2 : Distinction dépenses partagées vs personnelles
+
+As a **colocataire**,
+I want **distinguer clairement les dépenses partagées (divisées entre tous) des dépenses personnelles**,
+So that **l'équilibre financier est calculé correctement et je sais ce que je dois à qui**.
+
+**Acceptance Criteria:**
+
+**Given** j'ajoute une dépense
+**When** je choisis "Dépense partagée"
+**Then** le montant est divisé équitablement entre tous les membres de la colocation
+**And** l'équilibre de chaque membre est recalculé
+
+**Given** j'ajoute une dépense
+**When** je choisis "Dépense personnelle"
+**Then** le montant n'affecte que mon solde personnel
+**And** l'équilibre des autres membres n'est pas impacté
+
+**Given** je consulte le tableau des dépenses
+**When** je regarde la colonne "Type"
+**Then** chaque dépense affiche un badge "Partagée" ou "Personnelle"
+
+**Tâches techniques :**
+- Ajouter un champ `shared: boolean` (ou `scope: 'shared' | 'personal'`) au modèle Finance
+- Modifier le Dialog d'ajout de dépense : ajouter un sélecteur Partagée/Personnelle
+- Recalculer l'équilibre en ne prenant en compte que les dépenses `shared: true`
+- Afficher le type dans le tableau avec un badge visuel
+
+### Story 11.3 : Mise à jour des tarifs et tendance réelle
+
+As a **colocataire**,
+I want **que les tarifs (montants cagnotte, dettes, créances) se mettent à jour en temps réel après chaque opération**,
+So that **les chiffres affichés correspondent toujours à la réalité**.
+
+**Acceptance Criteria:**
+
+**Given** j'ajoute une dépense de 60€ partagée (3 colocataires)
+**When** la page Finances se rafraîchit
+**Then** "Mes dettes" ou "On me doit" est recalculé : chaque autre membre doit 20€ au payeur
+**And** la card "Cagnotte Commune" affiche le montant correct
+**And** la tendance affiche la variation réelle par rapport au mois précédent (pas un % fictif)
+
+**Given** les dépenses couvrent plusieurs mois (mars, avril, mai...)
+**When** je consulte le graphique finances
+**Then** le graphique affiche une barre par mois avec les montants réels
+**And** je peux voir l'historique complet, pas uniquement le mois courant
+
+**Tâches techniques :**
+- Supprimer le calcul fake `cagnotte * 0.18` — calculer la vraie tendance (mois N vs mois N-1)
+- Après chaque POST/PUT/DELETE dépense : refetch les données et recalculer tous les soldes
+- S'assurer que le graphique `FinancesChart` affiche tous les mois disponibles dans les données
+- Seed data : ajouter des entrées sur plusieurs mois pour que le graphique de démo soit parlant
+
+### Story 11.4 : Correction du Select "Payé par" dans le Dialog
+
+As a **colocataire**,
+I want **pouvoir sélectionner le payeur dans le formulaire d'ajout de dépense**,
+So that **la dépense est correctement attribuée à la bonne personne**.
+
+**Acceptance Criteria:**
+
+**Given** je clique "AJOUTER DÉPENSE"
+**When** le Dialog s'ouvre et je clique sur le sélecteur "Payé par"
+**Then** la liste déroulante affiche les noms des membres (pas les IDs)
+**And** je peux sélectionner un membre et la valeur est correctement enregistrée
+
+**Given** je sélectionne "Yohan" comme payeur
+**When** je valide la dépense
+**Then** la dépense est enregistrée avec `paidBy: "user-2"` (ID de Yohan) et le tableau affiche "Yohan"
+
+**Tâches techniques :**
+- Remplacer le composant `Select` de `@base-ui/react` par un select natif HTML ou un composant shadcn/ui `Select` qui fonctionne dans un Dialog
+- OU : corriger le z-index/portal du Select base-ui pour qu'il fonctionne correctement dans le Dialog
+- Vérifier que le `onChange` transmet bien l'ID et que l'affichage montre le nom
+- Appliquer la même correction à TOUS les Select dans des Dialog (tâches, finances, etc.)
+
+---
+
+## Epic 12 : Réglages — Gestion des Membres, Profil & Compte
+
+La page Réglages est largement non fonctionnelle : boutons morts, aucune gestion des membres, suppression de compte impossible.
+
+### Story 12.1 : Modification complète du profil
+
+As a **colocataire**,
+I want **modifier mon nom, email et mot de passe depuis les Réglages**,
+So that **mes informations personnelles sont toujours à jour**.
+
+**Acceptance Criteria:**
+
+**Given** je suis sur `/settings`
+**When** je modifie mon nom et/ou email et clique "Mettre à jour"
+**Then** mes informations sont sauvegardées côté serveur
+**And** le profil dans la sidebar/header se met à jour immédiatement
+**And** un message de confirmation s'affiche
+
+**Given** je veux changer mon mot de passe
+**When** je saisis l'ancien mot de passe, le nouveau (≥8 caractères) et la confirmation
+**Then** mon mot de passe est mis à jour
+**And** si l'ancien mot de passe est incorrect, un message d'erreur s'affiche
+
+**Tâches techniques :**
+- Ajouter un formulaire "Changer le mot de passe" (ancien, nouveau, confirmation) dans Settings.jsx
+- Route `PUT /api/users/:id` : accepter les champs `name`, `email`, `password` (vérifier ancien mot de passe si fourni)
+- Mettre à jour `AuthContext` + `sessionStorage` après modification réussie
+
+### Story 12.2 : Gestion des membres (admin)
+
+As a **admin de colocation**,
+I want **pouvoir modifier le rôle d'un membre, le virer de la colocation, ou le promouvoir admin**,
+So that **je contrôle qui fait partie de ma colocation et avec quels droits**.
+
+**Acceptance Criteria:**
+
+**Given** je suis admin sur la page Réglages
+**When** je clique sur le menu d'un membre
+**Then** je vois les options : "Promouvoir Admin", "Rétrograder Membre", "Exclure de la colocation"
+
+**Given** je clique "Exclure" sur un membre
+**When** la popup de confirmation s'affiche et je confirme
+**Then** le membre est retiré de la colocation
+**And** la liste des membres se met à jour
+
+**Given** je suis le seul admin
+**When** je tente de me rétrograder
+**Then** un message m'informe : "Vous devez d'abord promouvoir un autre membre admin"
+
+**Tâches techniques :**
+- Route `PUT /api/colocation/:id/members/:userId` : modifier le rôle (admin/member)
+- Route `DELETE /api/colocation/:id/members/:userId` : exclure un membre
+- Ajouter un menu contextuel (dropdown) par membre dans Settings.jsx
+- Empêcher la suppression du dernier admin (validation côté serveur)
+
+### Story 12.3 : Suppression de compte et de colocation
+
+As a **utilisateur**,
+I want **pouvoir supprimer mon compte ou, en tant qu'admin, supprimer toute la colocation**,
+So that **je peux quitter définitivement l'application ou dissoudre la colocation**.
+
+**Acceptance Criteria:**
+
+**Given** je clique "Supprimer le compte"
+**When** la popup de confirmation s'affiche et je confirme
+**Then** mon compte est supprimé, je suis retiré de la colocation, et redirigé vers `/login`
+**And** si j'étais le seul admin, un message m'informe de transférer le rôle d'abord
+
+**Given** je suis admin et je clique "Supprimer la colocation"
+**When** la popup de confirmation s'affiche (avec re-saisie du nom de la colocation)
+**Then** la colocation et toutes ses données associées sont supprimées
+**And** tous les membres sont déconnectés et redirigés vers `/login`
+
+**Tâches techniques :**
+- Route `DELETE /api/users/:id` : supprimer l'utilisateur, le retirer de sa colocation
+- Route `DELETE /api/colocation/:id` : supprimer la colocation + toutes les données liées (tâches, finances, etc.)
+- Ajouter le handler `onClick` sur le bouton "Supprimer le compte" dans Settings.jsx
+- Ajouter un bouton "Supprimer la colocation" (visible admin uniquement) avec double confirmation
+- Nettoyer `sessionStorage` et rediriger vers `/login`
+
+### Story 12.4 : Persistance des notifications
+
+As a **colocataire**,
+I want **que mes préférences de notifications soient sauvegardées**,
+So that **mes choix persistent après un rafraîchissement de page**.
+
+**Acceptance Criteria:**
+
+**Given** je toggle "Notifications par e-mail" sur OFF
+**When** je rafraîchis la page
+**Then** le toggle est toujours sur OFF
+
+**Tâches techniques :**
+- Ajouter les champs `emailNotifications` et `pushNotifications` au modèle utilisateur
+- Route `PUT /api/users/:id` : accepter ces champs
+- Au chargement de Settings.jsx, lire les préférences depuis l'utilisateur connecté
+- Au toggle, appeler l'API pour persister
+
+---
+
+## Epic 13 : Tâches, Dashboard & Composants UI
+
+Corrections des bugs moyens : composants Select, bulk actions manquantes, toggle statut, rafraîchissement dashboard.
+
+### Story 13.1 : Correction globale des composants Select
+
+As a **colocataire**,
+I want **que tous les sélecteurs (assignation, payeur, statut, type) fonctionnent correctement partout**,
+So that **je peux remplir les formulaires sans être bloqué**.
+
+**Acceptance Criteria:**
+
+**Given** un Select est dans un Dialog (ajout tâche, ajout dépense, etc.)
+**When** je clique pour ouvrir le Select
+**Then** les options s'affichent correctement au-dessus du Dialog
+**And** je peux sélectionner une option et la valeur est enregistrée
+
+**Given** un Select affiche des utilisateurs
+**When** je l'ouvre
+**Then** les noms sont affichés (pas les IDs)
+
+**Tâches techniques :**
+- Auditer tous les Select `@base-ui/react` utilisés dans des Dialog
+- Remplacer par des composants shadcn/ui `Select` ou des `<select>` natifs si le bug persiste
+- Vérifier le z-index de tous les portails Select (doit être > Dialog z-50)
+- Tester chaque formulaire : tâches (assignedTo, status, category), finances (paidBy), réglages
+
+### Story 13.2 : Bulk actions complètes sur les tâches
+
+As a **colocataire**,
+I want **pouvoir sélectionner plusieurs tâches et les supprimer ou les marquer "Terminée" en une action**,
+So that **je gagne du temps dans la gestion quotidienne**.
+
+**Acceptance Criteria:**
+
+**Given** j'ai sélectionné 3 tâches via les checkboxes
+**When** je clique "Marquer Terminée" dans la barre d'actions groupées
+**Then** les 3 tâches passent en statut "Terminée" et se déplacent dans la colonne correspondante
+
+**Given** j'ai sélectionné 2 tâches
+**When** je clique "Supprimer" dans la barre d'actions groupées et confirme
+**Then** les 2 tâches sont supprimées
+
+**Tâches techniques :**
+- Ajouter les boutons "Marquer Terminée" et "Supprimer" dans la barre de bulk actions existante
+- "Marquer Terminée" : PUT chaque tâche sélectionnée avec `status: "Terminée"`
+- "Supprimer" : DELETE chaque tâche sélectionnée (avec popup de confirmation)
+- Rafraîchir la liste après les actions
+
+### Story 13.3 : Toggle statut complet (À faire / En cours / Terminée)
+
+As a **colocataire**,
+I want **pouvoir faire passer une tâche par les 3 statuts : À faire → En cours → Terminée**,
+So that **je peux suivre précisément l'avancement de chaque tâche**.
+
+**Acceptance Criteria:**
+
+**Given** une tâche est "À faire"
+**When** je clique sur le bouton statut
+**Then** elle passe à "En cours"
+
+**Given** une tâche est "En cours"
+**When** je clique sur le bouton statut
+**Then** elle passe à "Terminée"
+
+**Given** une tâche est "Terminée"
+**When** je clique sur le bouton statut
+**Then** elle repasse à "À faire"
+
+**Tâches techniques :**
+- Modifier `toggleStatus` dans Tasks.jsx : cycle "À faire" → "En cours" → "Terminée" → "À faire"
+- Ajouter une colonne ou section "En cours" dans l'affichage Kanban
+- Mettre à jour les icônes et couleurs de badge pour chaque statut
+
+### Story 13.4 : Rafraîchissement du Dashboard et activités récentes
+
+As a **colocataire**,
+I want **que le dashboard affiche des données à jour et que le flux d'activités récentes soit pertinent**,
+So that **je vois l'état réel de ma colocation en temps réel**.
+
+**Acceptance Criteria:**
+
+**Given** j'ajoute une dépense depuis la page Finances
+**When** je reviens sur le Dashboard
+**Then** le widget Finances affiche le nouveau solde
+**And** l'activité récente inclut ma dépense avec le bon timestamp
+
+**Given** les données couvrent plusieurs mois
+**When** je consulte le graphique du dashboard
+**Then** le graphique affiche l'historique multi-mois (pas uniquement mars)
+
+**Tâches techniques :**
+- Dashboard.jsx : refetch toutes les données à chaque montage (pas de cache stale)
+- Activités récentes : utiliser `createdAt` ou `date` plutôt que `dueDate` pour les timestamps
+- Graphique ExpenseChart : s'assurer qu'il groupe par mois si les données couvrent plusieurs mois
+- Vérifier que les widgets utilisent les données filtrées par `colocationId`
