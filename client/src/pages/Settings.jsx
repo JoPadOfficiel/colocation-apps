@@ -125,9 +125,9 @@ export default function Settings() {
     const memberId = confirmExclude.id
     setActionError("")
     setActionLoading(memberId)
-    setConfirmExclude(null)
     try {
       await removeMember(colocation.id, memberId)
+      setConfirmExclude(null)
       await refreshColocation()
     } catch (err) {
       setActionError(err.message || "Erreur lors de l'exclusion du membre")
@@ -265,6 +265,7 @@ export default function Settings() {
       navigate("/login")
     } catch (err) {
       setDeleteAccountError(err.message || "Erreur lors de la suppression du compte")
+    } finally {
       setDeleteAccountLoading(false)
     }
   }

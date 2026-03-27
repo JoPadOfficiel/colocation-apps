@@ -443,8 +443,9 @@ app.delete('/api/subscriptions/:id', (req, res) => {
 });
 
 // Helper: resolve member ID from string or object format
+// Raw DB stores either plain string IDs or objects with {userId, role}
 function resolveMemberId(m) {
-  return typeof m === 'object' && m !== null ? m.userId : m;
+  return typeof m === 'object' && m !== null ? (m.userId || m.id) : m;
 }
 
 // Helper: count admins in a colocation
@@ -466,9 +467,7 @@ app.put('/api/colocation/:id/members/:userId', (req, res) => {
     return res.status(400).json({ error: 'Le rôle doit être "admin" ou "member"' });
   }
 
-  // Support both single object and array of colocations
-  const colocList = Array.isArray(colocation) ? colocation : [colocation];
-  const coloc = colocList.find(c => c.id === req.params.id);
+  const coloc = colocations.find(c => c.id === req.params.id);
   if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
 
   const { userId } = req.params;
@@ -487,26 +486,21 @@ app.put('/api/colocation/:id/members/:userId', (req, res) => {
     }
   }
 
-  // Update role: if member entry is an object, update its role; otherwise update the user record
-  const m = coloc.members[memberIdx];
-  if (typeof m === 'object' && m !== null) {
-    coloc.members[memberIdx] = { ...m, role };
-  } else {
-    // Role stored on user record
-    const userRecord = users.find(u => u.id === userId);
-    if (userRecord) {
-      userRecord.role = role;
-      db.save('users', users);
-    }
+  // Update role: always store as { userId, role } to avoid polluting the array with enriched objects
+  coloc.members[memberIdx] = { userId, role };
+  // Also update the user record for consistency
+  const userToUpdate = users.find(u => u.id === userId);
+  if (userToUpdate) {
+    userToUpdate.role = role;
+    db.save('users', users);
   }
-  db.save('colocation', colocation);
+  db.save('colocation', colocations);
   res.json({ data: enrichColocation(coloc) });
 });
 
 // DELETE /api/colocation/:id/members/:userId — Remove member
 app.delete('/api/colocation/:id/members/:userId', (req, res) => {
-  const colocList = Array.isArray(colocation) ? colocation : [colocation];
-  const coloc = colocList.find(c => c.id === req.params.id);
+  const coloc = colocations.find(c => c.id === req.params.id);
   if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
 
   const { userId } = req.params;
@@ -524,11 +518,12 @@ app.delete('/api/colocation/:id/members/:userId', (req, res) => {
 
   // Remove member from colocation
   coloc.members.splice(memberIdx, 1);
-  db.save('colocation', colocation);
+  db.save('colocation', colocations);
 
-  // Clear user's colocationId
+  // Clear user's colocationId and reset role
   if (userRecord) {
     userRecord.colocationId = null;
+    userRecord.role = 'member';
     db.save('users', users);
   }
 
