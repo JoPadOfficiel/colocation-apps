@@ -33,13 +33,13 @@ const SelectContent = React.forwardRef(({ className, children, sideOffset = 4, .
     <SelectPrimitive.Positioner 
       data-slot="select-positioner" 
       sideOffset={sideOffset}
-      className="z-[100]"
+      className="z-[200]"
     >
       <SelectPrimitive.Popup
         ref={ref}
         data-slot="select-content"
         className={cn(
-          "z-[100] min-w-[var(--anchor-width)] overflow-hidden rounded-xl bg-popover text-popover-foreground ring-1 ring-foreground/10 shadow-lg outline-none origin-[var(--transform-origin)] duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "z-[200] min-w-[var(--anchor-width)] overflow-hidden rounded-xl bg-popover text-popover-foreground ring-1 ring-foreground/10 shadow-lg outline-none origin-[var(--transform-origin)] duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
