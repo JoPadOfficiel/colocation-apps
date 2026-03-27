@@ -555,7 +555,11 @@ export default function Finances() {
                       <TableCell>{getUserName(expense.paidBy)}</TableCell>
                       <TableCell>{expense.title}</TableCell>
                       <TableCell>
-                        {expense.shared === false ? (
+                        {expense.type === 'contribution' ? (
+                          <Badge variant="outline" className="border-[#22c55e] text-[#22c55e] bg-green-50 hover:bg-green-50">
+                            Contribution
+                          </Badge>
+                        ) : expense.shared === false ? (
                           <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">
                             Personnelle
                           </Badge>

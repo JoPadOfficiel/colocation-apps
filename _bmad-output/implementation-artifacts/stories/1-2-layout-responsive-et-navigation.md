@@ -61,13 +61,15 @@ So that **je peux acceder a tous les modules depuis n'importe quel ecran**.
 ### Reference Design
 
 **Sidebar desktop (ui-design.md Ecran 3) :**
+
 - Background : `surface` (#ffffff)
-- Logo "ColocApp" avec icone `apartment`
+- Logo "LaBonneColoc" avec icone `apartment`
 - 5 items navigation avec icones Material Symbols
 - Item actif : background `primary-light` (#eef6fd), texte `primary` (#4799eb)
 - Profil utilisateur en bas : Avatar + nom + email + icone `logout`
 
 **Bottom tab bar mobile (ui-design.md section Navigation Mobile) :**
+
 - 5 onglets : Accueil, Taches, Food, Finances, Plus
 - Icone active : couleur `primary`
 - "Plus" ouvre un menu avec Abonnements et Reglages
@@ -77,6 +79,7 @@ So that **je peux acceder a tous les modules depuis n'importe quel ecran**.
 - Story 1.1 (projet initialise)
 
 ## Citations
+
 - [PRD: Section 7.5 - Navigation & UX](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L293-298)
 - [PRD: Section 6.2 - Architecture](file:///Users/jopad/Downloads/colocation-apps/_bmad-output/planning-artifacts/prd.md#L216-217)
 

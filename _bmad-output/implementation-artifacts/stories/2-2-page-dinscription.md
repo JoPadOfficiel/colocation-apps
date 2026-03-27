@@ -56,7 +56,8 @@ So that **je peux rejoindre ou creer une colocation**.
 ### Reference Design
 
 **Ecran 2 — Inscription (ui-design.md) :**
-- Header : logo "ColocApp" + nav (Accueil, Fonctionnalites, Tarifs) + lien "Se connecter"
+
+- Header : logo "LaBonneColoc" + nav (Accueil, Fonctionnalites, Tarifs) + lien "Se connecter"
 - Titre : "Creer un compte"
 - Sous-titre : "Rejoignez notre communaute de colocataires"
 - Champ Nom complet (icone `person`, requis)

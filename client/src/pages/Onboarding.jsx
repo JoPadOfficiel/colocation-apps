@@ -111,7 +111,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="p-6">
-        <h1 className="text-2xl font-bold text-primary">ColocApp</h1>
+        <h1 className="text-2xl font-bold text-primary">LaBonneColoc</h1>
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 pb-12">
@@ -234,7 +234,7 @@ export default function Onboarding() {
       </main>
 
       <footer className="p-6 text-center text-sm text-gray-500">
-        © 2026 ColocApp. Tous droits réservés.
+        © 2026 LaBonneColoc. Tous droits réservés.
       </footer>
     </div>
   )

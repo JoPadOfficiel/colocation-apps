@@ -41,7 +41,8 @@
     "profilePhoto": "",
     "role": "member",
     "colocationId": "coloc-2",
-    "dietaryConstraints": []
+    "dietaryConstraints": [],
+    "emailNotifications": false
   },
   {
     "id": "user-101",

@@ -33,7 +33,7 @@ const stripPassword = ({ password, ...rest }) => rest;
 
 // Health check
 app.get('/api', (req, res) => {
-  res.json({ message: 'ColocApp API is running' });
+  res.json({ message: 'LaBonneColoc API is running' });
 });
 
 // Helper: Enrich colocation with full member data

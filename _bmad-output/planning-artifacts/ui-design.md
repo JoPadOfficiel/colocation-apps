@@ -5,7 +5,7 @@ date: "2026-03-19"
 screens: 8
 ---
 
-# UI Design Reference — ColocApp
+# UI Design Reference — LaBonneColoc
 
 **Source :** Google Stitch Project #9935372244892167775
 **Ce document capture l'intégralité des designs Stitch pour servir de référence d'implémentation.**
@@ -57,22 +57,26 @@ screens: 8
 **Route :** `/login`
 
 ### Structure
+
 - Header : logo "ColocManager" + nav (Accueil, Fonctionnalités, Tarifs) + bouton "S'inscrire"
 - Formulaire centré
 
 ### Formulaire
+
 | Champ | Type | Icône | Placeholder |
 |-------|------|-------|-------------|
 | Email | email | — | "Email" |
 | Mot de passe | password | visibility_off (toggle) | "Mot de passe" |
 
 ### Actions
+
 - **Bouton principal :** "SE CONNECTER" (primary, full-width)
 - **Lien :** "Mot de passe oublié ?"
 - **Lien :** "Nouveau ici ? Créer un compte"
 - **Section :** "Rejoindre une colocation existante" + icône `group_add` + bouton "Rejoindre"
 
 ### Footer
+
 - "© 2023 ColocManager. Tous droits réservés."
 
 ---
@@ -82,11 +86,13 @@ screens: 8
 **Route :** `/register`
 
 ### Structure
-- Header : logo "ColocApp" + nav (Accueil, Fonctionnalités, Tarifs) + lien "Se connecter"
+
+- Header : logo "LaBonneColoc" + nav (Accueil, Fonctionnalités, Tarifs) + lien "Se connecter"
 - Titre : "Créer un compte"
 - Sous-titre : "Rejoignez notre communauté de colocataires"
 
 ### Formulaire
+
 | Champ | Type | Icône | Validation |
 |-------|------|-------|------------|
 | Nom complet | text | person | Requis |
@@ -94,6 +100,7 @@ screens: 8
 | Mot de passe | password | lock + visibility_off | "Au moins 8 caractères" |
 
 ### Actions
+
 - **Bouton principal :** "S'INSCRIRE" (primary, full-width)
 - **Social login :** Boutons Google + Facebook (visuels uniquement MVP)
 - **Lien :** "Déjà un compte ? Se connecter"
@@ -105,20 +112,22 @@ screens: 8
 **Route :** `/dashboard`
 
 ### Sidebar (Desktop)
+
 | Icône | Label | Route |
 |-------|-------|-------|
-| `apartment` | ColocApp (logo) | — |
+| `apartment` | LaBonneColoc (logo) | — |
 | `dashboard` | Accueil | `/dashboard` |
 | `check_circle` | Tâches | `/tasks` |
 | `shopping_cart` | Alimentation | `/food` |
 | `attach_money` | Finances | `/finances` |
 | `settings` | Réglages | `/settings` |
 
-**Profil utilisateur en bas :** Avatar + "Thomas Durand" + "thomas@coloc.fr" + icône `logout`
+**Profil utilisateur en bas :** Avatar + "Thomas Durand" + "<thomas@coloc.fr>" + icône `logout`
 
 ### Contenu principal
 
 **Header :**
+
 - "Bonjour, Thomas 👋"
 - "Voici ce qui se passe dans votre colocation aujourd'hui"
 - Bouton : "add Nouvelle dépense"
@@ -133,6 +142,7 @@ screens: 8
 | Abonnements | 4 services | Actifs | Nombre de services |
 
 **Sections supplémentaires :**
+
 - Graphique dépenses mensuelles (barres comparatives)
 - Flux d'activités récentes (3 entrées avec timestamps)
 - Tableau des soldes colocataires (3 personnes, montants)
@@ -146,14 +156,17 @@ screens: 8
 **Route :** `/tasks`
 
 ### Header
+
 - Titre : "Tâches de la Colocation"
 - Bouton : "add NOUVELLE TÂCHE"
 
 ### Colonnes (Kanban-style)
+
 - **À Faire** (compteur : 3) — cards de tâches
 - **Terminées** (compteur : 2) — cards de tâches
 
 ### Card Tâche
+
 - Label catégorie (ex: "Cuisine", "Salon")
 - Titre de la tâche
 - Icône drag : `drag_indicator`
@@ -162,6 +175,7 @@ screens: 8
 - Badge assignation (prénom)
 
 ### Actions
+
 - Bouton "Ajouter une tâche" (secondaire, par colonne)
 - Filtres par statut, assignation, date
 
@@ -172,6 +186,7 @@ screens: 8
 **Route :** `/finances`
 
 ### Header
+
 - Titre : "Finances"
 - Boutons : "AJOUTER DÉPENSE" + `filter_list` + `download`
 
@@ -184,6 +199,7 @@ screens: 8
 | On me doit | 0,00 € | — |
 
 ### Tableau des dépenses récentes
+
 | Colonne | Contenu |
 |---------|---------|
 | Date | Format "24 Oct 2023" |
@@ -201,6 +217,7 @@ screens: 8
 **Route :** `/food`
 
 ### Section Liste de courses
+
 - Titre : "Liste de courses" + compteur (12 articles)
 - Barre de recherche + bouton "Ajouter"
 - Articles groupés par catégorie :
@@ -209,6 +226,7 @@ screens: 8
 - Icônes : `check_circle` (acheté), `shopping_cart`
 
 ### Section Recettes Partagées
+
 - Titre : "Recettes Partagées"
 - Cards recette :
   - Image placeholder
@@ -226,6 +244,7 @@ screens: 8
 **Route :** `/subscriptions`
 
 ### Header
+
 - Titre : "Abonnements — Gérez les services partagés de la colocation"
 - Bouton : "AJOUTER ABONNEMENT"
 - Résumé : "Coût Mensuel Total: 145,50 €"
@@ -241,6 +260,7 @@ screens: 8
 | Électricité (EDF) | FIXE | 62,54 € | 15 Oct |
 
 Chaque card :
+
 - Logo/icône du service (`movie`, `router`, `audiotrack`, `stars`, `bolt`)
 - Nom + type (badge)
 - Prix/mois
@@ -256,12 +276,14 @@ Chaque card :
 **Route :** `/settings`
 
 ### Section Profil
+
 - Titre : "Profil"
 - Sous-titre : "Mettez à jour vos informations personnelles et votre compte"
 - Champs : Nom complet (text), Adresse e-mail (email)
 - Bouton : "Mettre à jour"
 
 ### Section Ma Colocation
+
 - **Code d'invitation :** `COLO-7829-X` (copiable)
 - **Liste des membres :**
   - Thomas (Vous) — Admin
@@ -270,12 +292,14 @@ Chaque card :
 - Bouton : `person_add` "Inviter un colocataire"
 
 ### Section Notifications
+
 | Toggle | Label | Description |
 |--------|-------|-------------|
 | ✅ | `mail` Notifications par e-mail | Résumé hebdomadaire des dépenses et tâches |
 | ✅ | `notifications_active` Notifications Push | Alertes immédiates pour nouvelles tâches et messages |
 
 ### Footer
+
 - Lien : "Supprimer le compte" (danger)
 
 ---
@@ -297,27 +321,32 @@ Pour les écrans < 768px, la sidebar est remplacée par une bottom tab bar :
 ## Données Mockées de Référence
 
 ### Utilisateurs
-- Thomas Durand (Admin) — thomas@coloc.fr
+
+- Thomas Durand (Admin) — <thomas@coloc.fr>
 - Léa Martin (Membre)
 - Marc Lefebvre (Membre)
 
 ### Tâches
+
 - Sortir les poubelles (Yohan, À faire, urgent)
 - Ménage salon (Jopad, En cours)
 - Vaisselle (Luis-Manuel, Terminée)
 
 ### Finances
+
 - Cagnotte commune : 250,00 €
 - Dépenses : Courses (50€, Thomas), Internet (30€, Léa), Électricité (45€, Marc)...
 - 24 transactions au total (paginées par 5)
 
 ### Recettes
+
 - Pâtes Carbonara (20min, 4 portions)
 - Quiche Lorraine (45min, 6 portions)
 - Salade César (15min, 2 portions)
 - Pancakes du Dimanche (30min, 4 portions)
 
 ### Abonnements
+
 - Netflix Premium : 17,99€/mois
 - Internet Orange Fibre : 39,99€/mois
 - Spotify Family : 15,99€/mois

@@ -27,7 +27,7 @@ editHistory:
     changes: 'Clarified mock FRs (FR5, FR6, FR32), removed implementation leakage from NFRs, added acceptance criteria to all 4 user journeys'
 ---
 
-# Product Requirements Document — ColocApp
+# Product Requirements Document — LaBonneColoc
 
 **Auteur :** Jopad
 **Date :** 2026-03-19
@@ -35,9 +35,9 @@ editHistory:
 
 ## Résumé Exécutif
 
-**ColocApp** est une application web responsive (mobile-first) de gestion collaborative de colocation. Elle centralise en un seul dashboard les quatre piliers de la vie en commun : **tâches ménagères, finances partagées, alimentation/repas et abonnements communs**.
+**LaBonneColoc** est une application web responsive (mobile-first) de gestion collaborative de colocation. Elle centralise en un seul dashboard les quatre piliers de la vie en commun : **tâches ménagères, finances partagées, alimentation/repas et abonnements communs**.
 
-L'application cible les colocataires qui perdent du temps et créent des conflits en jonglant entre WhatsApp, tableurs et notes de frigo. ColocApp remplace ces 4+ outils fragmentés par **un dashboard unifié avec des widgets** : en un coup d'oeil, chaque colocataire voit ses tâches, ses soldes, le menu du jour et les abonnements actifs.
+L'application cible les colocataires qui perdent du temps et créent des conflits en jonglant entre WhatsApp, tableurs et notes de frigo. LaBonneColoc remplace ces 4+ outils fragmentés par **un dashboard unifié avec des widgets** : en un coup d'oeil, chaque colocataire voit ses tâches, ses soldes, le menu du jour et les abonnements actifs.
 
 Le produit est un **MVP fonctionnel** réalisé en 3 jours par 3 développeurs (projet de formation IHM). Données mockées, composants UI existants, 8 écrans Google Stitch comme référence visuelle et fonctionnelle. L'application doit être testable, fonctionnelle de bout en bout, et responsive.
 
@@ -137,11 +137,12 @@ Le produit est un **MVP fonctionnel** réalisé en 3 jours par 3 développeurs (
 
 ### Parcours 1 : Yohan, nouveau colocataire (Onboarding)
 
-Yohan vient d'emménager dans une coloc de 3 personnes. Son colocataire Jopad lui envoie un code d'invitation : **COLO-7829-X**. Il ouvre ColocApp, clique sur **"S'inscrire"**, entre son nom, email et mot de passe. Après l'inscription, il clique sur **"Rejoindre une colocation existante"**, entre le code, et atterrit sur le **dashboard**. D'un coup d'oeil, il voit les tâches en cours, la cagnotte commune à 320€, le menu du jour, et les 4 abonnements partagés. Il clique sur le widget Tâches et voit qu'il doit sortir les poubelles.
+Yohan vient d'emménager dans une coloc de 3 personnes. Son colocataire Jopad lui envoie un code d'invitation : **COLO-7829-X**. Il ouvre LaBonneColoc, clique sur **"S'inscrire"**, entre son nom, email et mot de passe. Après l'inscription, il clique sur **"Rejoindre une colocation existante"**, entre le code, et atterrit sur le **dashboard**. D'un coup d'oeil, il voit les tâches en cours, la cagnotte commune à 320€, le menu du jour, et les 4 abonnements partagés. Il clique sur le widget Tâches et voit qu'il doit sortir les poubelles.
 
 **Capacités :** Inscription, code d'invitation, rejoindre coloc, dashboard avec widgets, navigation vers modules
 
 **Critères d'acceptation :**
+
 - [ ] Le formulaire d'inscription valide nom, email et mot de passe (≥8 caractères)
 - [ ] Le code d'invitation COLO-XXXX-X permet de rejoindre une colocation existante
 - [ ] Après connexion, le dashboard affiche les 4 widgets en moins de 1 seconde
@@ -154,6 +155,7 @@ Jopad est l'admin de la coloc. Il ouvre le dashboard et voit 2 tâches urgentes.
 **Capacités :** CRUD tâches + récurrence, ajout dépenses, calcul d'équilibre, consultation abonnements, gestion membres
 
 **Critères d'acceptation :**
+
 - [ ] Une tâche créée avec récurrence hebdomadaire affiche le champ fréquence
 - [ ] L'ajout d'une dépense de 50€ met à jour l'équilibre : chaque colocataire doit 16.67€
 - [ ] Le tableau des dépenses affiche date, libellé, payeur et montant
@@ -166,6 +168,7 @@ Luis-Manuel ouvre le module **Alimentation** pour voir le menu du jour. Il cherc
 **Capacités :** Recherche recettes, favoris, liste de courses (CRUD articles), lien alimentation→finances
 
 **Critères d'acceptation :**
+
 - [ ] La recherche par ingrédient retourne des résultats filtrés dynamiquement
 - [ ] Un clic sur le coeur ajoute la recette aux favoris (état visuel mis à jour)
 - [ ] Les articles ajoutés à la liste de courses apparaissent immédiatement
@@ -178,6 +181,7 @@ Jopad essaie de créer une tâche sans titre — message d'erreur. Il ajoute une
 **Capacités :** Validation formulaires, messages d'erreur, pop-ups de confirmation, contraintes de rôle admin
 
 **Critères d'acceptation :**
+
 - [ ] Soumettre un formulaire vide affiche un message d'erreur sur le champ requis
 - [ ] Une dépense de 0€ ou négative est refusée avec un message explicite
 - [ ] La suppression d'un élément affiche une pop-up de confirmation avant exécution

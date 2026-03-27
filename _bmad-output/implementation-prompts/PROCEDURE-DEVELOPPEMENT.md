@@ -1,9 +1,9 @@
-# Procédure de Développement — ColocApp MVP
+# Procédure de Développement — LaBonneColoc MVP
 
 **Projet :** colocation-apps
 **Équipe :** Jopad (lead), Yohan (junior), Luis-Manuel (junior)
 **Durée :** 3 jours
-**Board Trello :** https://trello.com/b/mkNuQaCR/tableau-kanban-colocation
+**Board Trello :** <https://trello.com/b/mkNuQaCR/tableau-kanban-colocation>
 
 ---
 
@@ -54,6 +54,7 @@ main                          ← branche de production (protégée)
 | **Jopad** | Code review des PRs + support aux juniors | — | — |
 
 **En fin de J1 :**
+
 - Yohan crée PR pour Epic 2 → Jopad review + merge dans `dev`
 - Luis-Manuel crée PR pour Epic 4 (partiel) → Jopad review
 
@@ -74,25 +75,30 @@ main                          ← branche de production (protégée)
 Pour chaque story, le développeur concerné suit TOUJOURS cet enchaînement :
 
 ### 1. Prendre la story
+
 - Déplacer la card Trello dans **"In progress"**
 - Se mettre sur la bonne branche : `git checkout feat/epic-X-xxx`
 
 ### 2. Lire le fichier story et le prompt
+
 - Naviguer jusqu'au dossier de votre Epic : `_bmad-output/implementation-prompts/epic-X/`
 - Ouvrir le fichier de prompt : `EPIC-X-PROMPTS.md`
 - Chaque prompt est préparé à l'avance et encapsulé dans un bloc de code.
 
 ### 3. Exécution IA (BMAD Method)
+
 - Allez dans la section correspondant à votre sous-story (ex: `Story 1.1`).
 - Copier le bloc de code d'instruction complet (du tag `<system-override...` jusqu'à la fin de l'étape 5).
 - Le coller dans Claude Code / l'IDE avec IA ou via agent.
 - Vérifier que l'IA respecte chaque étape séquentiellement (STORY EXISTENCE CHECK, ANALYSIS, DEV STORY, TESTING, CODE REVIEW).
 
 ### 4. Validation et Tests Locaux
+
 - Au terme de l'exécution, réaliser les tests locaux indiqués (`npm run dev`).
 - Vérifier le flux fonctionnel.
 
 ### 5. Commit + PR
+
 - `git add .` puis `git commit -m "feat(module): ..."`
 - A la fin de l'Epic, ouvrir une PR vers `dev`.
 - Placer la card sur **"Code Review"** sur Trello.
@@ -105,16 +111,19 @@ Retrouvez les instructions pour chaque Epic dans :
 `_bmad-output/implementation-prompts/epic-[NUM]/EPIC-[NUM]-PROMPTS.md`
 
 ### ➔ Jopad (9 stories)
+
 **Epic 1 (Bloquant)** : `epic-1/EPIC-1-PROMPTS.md` (Stories 1.1, 1.2, 1.3)
 **Epic 3** : `epic-3/EPIC-3-PROMPTS.md` (Stories 3.1, 3.2, 3.3)
 **Epic 5** : `epic-5/EPIC-5-PROMPTS.md` (Stories 5.1, 5.2, 5.3)
 
 ### ➔ Yohan (9 stories)
+
 **Epic 2** : `epic-2/EPIC-2-PROMPTS.md` (Stories 2.1, 2.2, 2.3, 2.4)
 **Epic 7** : `epic-7/EPIC-7-PROMPTS.md` (Stories 7.1, 7.2)
 **Epic 8** : `epic-8/EPIC-8-PROMPTS.md` (Stories 8.1, 8.2, 8.3)
 
 ### ➔ Luis-Manuel (7 stories)
+
 **Epic 4** : `epic-4/EPIC-4-PROMPTS.md` (Stories 4.1, 4.2, 4.3, 4.4)
 **Epic 6** : `epic-6/EPIC-6-PROMPTS.md` (Stories 6.1, 6.2, 6.3)
 

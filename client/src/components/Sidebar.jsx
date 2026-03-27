@@ -17,19 +17,18 @@ export default function Sidebar() {
   return (
     <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-primary">ColocApp</h1>
+        <h1 className="text-2xl font-bold text-primary">LaBonneColoc</h1>
       </div>
-      
+
       <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
+                ? 'bg-primary/10 text-primary'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`
             }
           >
@@ -49,7 +48,7 @@ export default function Sidebar() {
             <p className="text-xs text-gray-500 truncate">{user?.email ?? ''}</p>
           </div>
         </div>
-        
+
         <button
           onClick={logout}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
