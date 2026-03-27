@@ -118,5 +118,14 @@
     "paidBy": "user-1",
     "type": "expense",
     "shared": true
+  },
+  {
+    "id": "fin-103",
+    "colocationId": "coloc-1",
+    "type": "contribution",
+    "title": "Contribution à la cagnotte",
+    "amount": 10,
+    "date": "2026-03-27",
+    "paidBy": "user-1"
   }
 ]

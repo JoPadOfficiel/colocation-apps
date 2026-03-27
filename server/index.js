@@ -141,7 +141,7 @@ app.get('/api/colocation/:id', (req, res) => {
 app.post('/api/colocation/preview', (req, res) => {
   const { invitationCode } = req.body || {};
   if (!invitationCode) return res.status(400).json({ error: 'invitationCode requis' });
-  const list = Array.isArray(colocation) ? colocation : [colocation];
+  const list = colocations;
   const coloc = list.find(c => c.invitationCode === invitationCode);
   if (!coloc) return res.status(404).json({ error: "Code d'invitation invalide" });
   const members = coloc.members.map(memberId => {
@@ -152,17 +152,17 @@ app.post('/api/colocation/preview', (req, res) => {
 });
 
 app.put('/api/colocation/:id', (req, res) => {
-  if (colocation.id !== req.params.id) {
+  const coloc = colocations.find(c => c.id === req.params.id);
+  if (!coloc) {
     return res.status(404).json({ error: 'Colocation non trouvée' });
   }
   const { totalFund, name, paidBy } = req.body;
   if (totalFund !== undefined) {
     if (totalFund < 0) return res.status(400).json({ error: 'Le montant doit être positif' });
-    colocation.totalFund = (colocation.totalFund || 0) + totalFund;
-    // Create a finance entry of type 'contribution'
+    coloc.totalFund = (coloc.totalFund || 0) + totalFund;
     const contribution = {
       id: genId(finances, 'fin'),
-      colocationId: colocation.id,
+      colocationId: coloc.id,
       type: 'contribution',
       title: 'Contribution à la cagnotte',
       amount: totalFund,
@@ -172,9 +172,9 @@ app.put('/api/colocation/:id', (req, res) => {
     finances.push(contribution);
     db.save('finances', finances);
   }
-  if (name) colocation.name = name;
-  db.save('colocation', colocation);
-  res.json({ data: enrichColocation(colocation) });
+  if (name) coloc.name = name;
+  db.save('colocation', colocations);
+  res.json({ data: enrichColocation(coloc) });
 });
 
 app.post('/api/colocation/join', (req, res) => {
