@@ -332,7 +332,7 @@ export default function Settings() {
             {error && <p className="text-sm text-[#ef4444]">{error}</p>}
             {success && <p className="text-sm text-[#22c55e]">Informations mises à jour.</p>}
 
-            <Button type="submit" disabled={saving} className="bg-[#4799eb] hover:bg-[#3b82f6] text-white">
+            <Button type="submit" disabled={saving}>
               {saving ? "Enregistrement..." : "Mettre à jour"}
             </Button>
           </form>
@@ -396,7 +396,7 @@ export default function Settings() {
             {pwError && <p className="text-sm text-[#ef4444]">{pwError}</p>}
             {pwSuccess && <p className="text-sm text-[#22c55e]">Mot de passe mis à jour.</p>}
 
-            <Button type="submit" disabled={pwSaving} className="bg-[#4799eb] hover:bg-[#3b82f6] text-white">
+            <Button type="submit" disabled={pwSaving}>
               {pwSaving ? "Enregistrement..." : "Changer le mot de passe"}
             </Button>
           </form>

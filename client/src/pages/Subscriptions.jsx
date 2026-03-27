@@ -91,12 +91,16 @@ export default function Subscriptions() {
 
   const openEditDialog = (sub) => {
     setCurrentSub(sub);
+    const rawDate = sub.nextWithdrawalDate || sub.dateBilling || sub.datePrelevement || "";
+    const formattedDate = rawDate && !isNaN(new Date(rawDate).getTime())
+      ? new Date(rawDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+      : rawDate;
     setFormData({
-      nameService: sub.nameService || sub.nomService || "",
+      nameService: sub.nameService || sub.serviceName || sub.nomService || "",
       type: sub.type || "SERVICE",
-      costMonthly: sub.costMonthly || sub.coutMensuel || "",
-      dateBilling: sub.dateBilling || sub.datePrelevement || "",
-      placesLimit: sub.placesLimit || "",
+      costMonthly: sub.costMonthly || sub.monthlyPrice || sub.coutMensuel || "",
+      dateBilling: formattedDate,
+      placesLimit: sub.placesLimit || sub.sharedPlaces || "",
       placesUsed: sub.placesUsed || ""
     });
     setErrors({});
@@ -174,14 +178,14 @@ export default function Subscriptions() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Abonnements</h1>
           <p className="text-gray-500 mt-1">Gérez les services partagés de la colocation</p>
         </div>
-        <Button onClick={openAddDialog} className="bg-[#4799eb] hover:bg-[#3b82f6] text-white self-start md:self-auto shadow-sm">
+        <Button onClick={openAddDialog} className="self-start md:self-auto shadow-sm">
           AJOUTER ABONNEMENT
         </Button>
       </div>
 
-      <div className="bg-[#eef6fd] border border-[#4799eb]/20 text-[#0e141b] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div className="bg-gray-50 border border-gray-200 text-[#0e141b] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="bg-white p-3 rounded-full text-[#4799eb] shadow-sm">
+          <div className="bg-white p-3 rounded-full text-gray-700 shadow-sm">
             <Wallet size={24} />
           </div>
           <div>
@@ -355,7 +359,7 @@ export default function Subscriptions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={isSaving} className="bg-[#4799eb] text-white hover:bg-[#3b82f6]">
+            <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
