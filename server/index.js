@@ -126,6 +126,32 @@ app.post('/api/colocation', (req, res) => {
   res.status(201).json({ data: colocation });
 });
 
+app.put('/api/colocation/:id', (req, res) => {
+  if (colocation.id !== req.params.id) {
+    return res.status(404).json({ error: 'Colocation non trouvée' });
+  }
+  const { totalFund, name, paidBy } = req.body;
+  if (totalFund !== undefined) {
+    if (totalFund < 0) return res.status(400).json({ error: 'Le montant doit être positif' });
+    colocation.totalFund = (colocation.totalFund || 0) + totalFund;
+    // Create a finance entry of type 'contribution'
+    const contribution = {
+      id: genId(finances, 'fin'),
+      colocationId: colocation.id,
+      type: 'contribution',
+      title: 'Contribution à la cagnotte',
+      amount: totalFund,
+      date: new Date().toISOString().split('T')[0],
+      paidBy: paidBy || null,
+    };
+    finances.push(contribution);
+    db.save('finances', finances);
+  }
+  if (name) colocation.name = name;
+  db.save('colocation', colocation);
+  res.json({ data: enrichColocation(colocation) });
+});
+
 app.post('/api/colocation/join', (req, res) => {
   const { code, userId } = req.body || {};
   if (!code) return res.status(400).json({ error: 'Code requis' });

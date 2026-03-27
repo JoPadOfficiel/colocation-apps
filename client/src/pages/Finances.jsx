@@ -11,11 +11,11 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
-import { fetchFinances, createFinance, updateFinance, deleteFinance } from "@/lib/api";
+import { fetchFinances, createFinance, updateFinance, deleteFinance, fetchColocation, updateColocation as apiUpdateColocation } from "@/lib/api";
 import FinancesChart from "@/components/FinancesChart";
 
 export default function Finances() {
-  const { user, colocation } = useAuth();
+  const { user, colocation, updateColocation: updateColocationCtx } = useAuth();
   const [finances, setFinances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,6 +31,12 @@ export default function Finances() {
   const [editingExpense, setEditingExpense] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
+
+  // Contribution dialog state
+  const [isContribDialogOpen, setIsContribDialogOpen] = useState(false);
+  const [contribAmount, setContribAmount] = useState("");
+  const [contribError, setContribError] = useState("");
+  const [isContribSubmitting, setIsContribSubmitting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,7 +54,9 @@ export default function Finances() {
   // Fonction de calcul des métriques réutilisable (évite duplication)
   const calculateMetrics = useCallback((financesData) => {
     const nombreColocataires = colocation?.members?.length || 0;
-    
+    // Exclude contributions from balance calculations
+    const expensesOnly = financesData.filter(f => f.type !== 'contribution');
+
     // Protection contre division par zéro
     if (nombreColocataires === 0) {
       setCagnotte(colocation?.totalFund || 0);
@@ -57,10 +65,10 @@ export default function Finances() {
       setTendance(0);
       return;
     }
-    
-    const totalDepenses = financesData.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    const totalDepenses = expensesOnly.reduce((sum, f) => sum + (f.amount || 0), 0);
     const partParPersonne = totalDepenses / nombreColocataires;
-    const mesDepenses = financesData
+    const mesDepenses = expensesOnly
       .filter(f => f.paidBy === user?.id)
       .reduce((sum, f) => sum + (f.amount || 0), 0);
     
@@ -199,8 +207,9 @@ export default function Finances() {
       .map(key => monthlyMap[key]);
   };
 
-  // Calculer les données pour l'affichage
-  const balances = calculateBalance(finances, colocation?.members || []);
+  // Calculer les données pour l'affichage (contributions exclues du calcul d'équilibre)
+  const expensesForBalance = finances.filter(f => f.type !== 'contribution');
+  const balances = calculateBalance(expensesForBalance, colocation?.members || []);
   const monthlyData = calculateMonthlyData(finances);
 
   // Pagination logic avec protection contre division par zéro
@@ -249,6 +258,40 @@ export default function Finances() {
     setEditingExpense(null);
     setFormData({ title: "", amount: "", date: "", paidBy: "" });
     setFormErrors({});
+  };
+
+  const handleOpenContribDialog = () => {
+    setContribAmount("");
+    setContribError("");
+    setIsContribDialogOpen(true);
+  };
+
+  const handleContribSubmit = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(contribAmount);
+    if (!contribAmount || isNaN(amount) || amount <= 0) {
+      setContribError("Le montant doit être supérieur à 0");
+      return;
+    }
+    setIsContribSubmitting(true);
+    try {
+      const updatedColoc = await apiUpdateColocation(colocation.id, {
+        totalFund: amount,
+        paidBy: user?.id,
+      });
+      // Update colocation in context so cagnotte card refreshes
+      updateColocationCtx(updatedColoc);
+      // Update cagnotte directly from server response (avoid stale closure)
+      setCagnotte(updatedColoc.totalFund || 0);
+      // Refetch finances to show new contribution entry in history
+      const data = await fetchFinances();
+      setFinances(data);
+      setIsContribDialogOpen(false);
+    } catch (err) {
+      setContribError(err.message || "Erreur lors de la contribution");
+    } finally {
+      setIsContribSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -389,11 +432,11 @@ export default function Finances() {
             <div className="text-3xl font-bold text-[#0e141b]">
               {formatMontant(cagnotte)}
             </div>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={`mt-2 ${
-                tendance >= 0 
-                  ? "border-[#22c55e] text-[#22c55e]" 
+                tendance >= 0
+                  ? "border-[#22c55e] text-[#22c55e]"
                   : "border-[#ef4444] text-[#ef4444]"
               }`}
             >
@@ -404,6 +447,15 @@ export default function Finances() {
               )}
               {tendance >= 0 ? "+" : ""}{formatMontant(Math.abs(tendance)).replace(" €", "€")} ce mois
             </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={handleOpenContribDialog}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter à la cagnotte
+            </Button>
           </CardContent>
         </Card>
 
@@ -694,6 +746,47 @@ export default function Finances() {
         variant="destructive"
         isLoading={isSubmitting}
       />
+
+      {/* Dialog Ajouter à la cagnotte */}
+      <Dialog open={isContribDialogOpen} onOpenChange={setIsContribDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter à la cagnotte</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleContribSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="contrib-amount">Montant (€)</Label>
+              <Input
+                id="contrib-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={contribAmount}
+                onChange={(e) => {
+                  setContribAmount(e.target.value);
+                  setContribError("");
+                }}
+                placeholder="0.00"
+                required
+              />
+              {contribError && <p className="text-sm text-red-500 mt-1">{contribError}</p>}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsContribDialogOpen(false)}
+                disabled={isContribSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isContribSubmitting}>
+                {isContribSubmitting ? "En cours..." : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
