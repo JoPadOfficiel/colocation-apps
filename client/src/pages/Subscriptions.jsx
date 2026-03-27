@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ const FALLBACK_SUBSCRIPTIONS = [
 ];
 
 export default function Subscriptions() {
+  const { colocation } = useAuth();
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,7 +58,7 @@ export default function Subscriptions() {
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await fetchSubscriptions();
+        const data = await fetchSubscriptions(colocation?.id);
         if (data && data.length > 0) {
           setSubscriptions(data.map(d => ({
             ...d,
@@ -75,7 +77,7 @@ export default function Subscriptions() {
       }
     }
     loadData();
-  }, []);
+  }, [colocation?.id]);
 
   const totalCost = subscriptions.reduce((acc, sub) => acc + Number(sub.monthlyPrice || sub.costMonthly || sub.coutMensuel || 0), 0);
   const formattedTotal = totalCost.toFixed(2).replace(".", ",");
@@ -152,7 +154,8 @@ export default function Subscriptions() {
       } else {
         const created = await createSubscription({
           ...payload,
-          icon: "stars"
+          icon: "stars",
+          colocationId: colocation?.id,
         });
         setSubscriptions([...subscriptions, created]);
       }

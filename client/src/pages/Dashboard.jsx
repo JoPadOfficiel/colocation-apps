@@ -181,13 +181,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([fetchTasks(), fetchFinances(), fetchShoppingList(), fetchSubscriptions(), fetchUsers()])
+    Promise.all([fetchTasks(colocation?.id), fetchFinances(colocation?.id), fetchShoppingList(colocation?.id), fetchSubscriptions(colocation?.id), fetchUsers()])
       .then(([tasks, finances, shopping, subscriptions, users]) => {
         setData({ tasks, finances, shopping, subscriptions, users })
       })
       .catch((err) => console.error("Dashboard load error:", err))
       .finally(() => setLoading(false))
-  }, [])
+  }, [colocation?.id])
 
   const firstName = user?.name?.split(" ")[0] || "Utilisateur"
   const urgentTasks = data.tasks.filter((t) => t.status === "À faire" || t.status === "En cours")

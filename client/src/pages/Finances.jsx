@@ -90,10 +90,10 @@ export default function Finances() {
 
     const loadFinances = async () => {
       try {
-        const data = await fetchFinances();
+        const data = await fetchFinances(colocation?.id);
         setFinances(data);
         calculateMetrics(data);
-        
+
       } catch (error) {
         console.error("Erreur lors du chargement des finances:", error);
         setError(error.message || "Erreur lors du chargement des données");
@@ -292,7 +292,7 @@ export default function Finances() {
       }
 
       // Refetch finances
-      const data = await fetchFinances();
+      const data = await fetchFinances(colocation?.id);
       setFinances(data);
       setCurrentPage(1);
       calculateMetrics(data);
@@ -318,7 +318,7 @@ export default function Finances() {
       await deleteFinance(expenseToDelete.id);
 
       // Refetch finances
-      const data = await fetchFinances();
+      const data = await fetchFinances(colocation?.id);
       setFinances(data);
 
       // Ajuster la pagination si la page actuelle devient vide

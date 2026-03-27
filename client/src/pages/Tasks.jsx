@@ -33,7 +33,7 @@ const RECURRENCES = [
 ]
 
 export default function Tasks() {
-  const { user } = useAuth()
+  const { user, colocation } = useAuth()
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,11 +52,11 @@ export default function Tasks() {
   const [formError, setFormError] = useState(null)
 
   useEffect(() => {
-    Promise.all([fetchTasks(), fetchUsers()])
+    Promise.all([fetchTasks(colocation?.id), fetchUsers()])
       .then(([t, u]) => { setTasks(t); setUsers(u) })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [colocation?.id])
 
   const userMap = {}
   users.forEach((u) => { userMap[u.id] = u.name })
@@ -101,6 +101,7 @@ export default function Tasks() {
       dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : new Date().toISOString(),
       status: editingTask ? editingTask.status : "À faire",
       createdBy: user?.id,
+      colocationId: colocation?.id,
     }
     try {
       if (editingTask) {

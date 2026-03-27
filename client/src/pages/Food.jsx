@@ -81,7 +81,7 @@ const COMMON_DIETS = [
 ]
 
 export default function Food() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, colocation } = useAuth()
   const [recipes, setRecipes] = useState([])
   const [shoppingItems, setShoppingItems] = useState([])
   const [users, setUsers] = useState([])
@@ -118,7 +118,7 @@ export default function Food() {
   const [dailyMenu, setDailyMenu] = useState(null)
 
   useEffect(() => {
-    Promise.all([fetchRecipes(), fetchShoppingList(), fetchUsers()])
+    Promise.all([fetchRecipes(colocation?.id), fetchShoppingList(colocation?.id), fetchUsers()])
       .then(([r, s, u]) => {
         setRecipes(r)
         setShoppingItems(s)
@@ -134,7 +134,7 @@ export default function Food() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [colocation?.id])
 
   const userMap = {}
   users.forEach((u) => { userMap[u.id] = u.name })
@@ -148,7 +148,8 @@ export default function Food() {
         itemName: newItemName.trim(),
         category: newItemCategory,
         isPurchased: false,
-        assignedTo: newItemAssignedTo || user?.id
+        assignedTo: newItemAssignedTo || user?.id,
+        colocationId: colocation?.id,
       })
       setShoppingItems((prev) => [...prev, item])
       setNewItemName("")
@@ -250,7 +251,8 @@ export default function Food() {
       ...recipeForm,
       prepTime: parseInt(recipeForm.prepTime) || 0,
       portions: parseInt(recipeForm.portions) || 0,
-      ingredients: recipeForm.ingredients.split(",").map(i => i.trim()).filter(Boolean)
+      ingredients: recipeForm.ingredients.split(",").map(i => i.trim()).filter(Boolean),
+      colocationId: colocation?.id,
     }
     try {
       if (editingRecipe) {

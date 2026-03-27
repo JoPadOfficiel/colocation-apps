@@ -1,3 +1,9 @@
+export function apiUrl(path, colocationId) {
+  if (!colocationId) return path
+  const sep = path.includes('?') ? '&' : '?'
+  return `${path}${sep}colocationId=${colocationId}`
+}
+
 async function request(url, options = {}) {
   const headers = options.body ? { "Content-Type": "application/json" } : {}
   const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } })
@@ -46,8 +52,8 @@ export async function getMembers(colocationData) {
   }
 }
 
-export function fetchTasks() {
-  return request("/api/tasks")
+export function fetchTasks(colocationId) {
+  return request(apiUrl("/api/tasks", colocationId))
 }
 
 export function createTask(data) {
@@ -62,8 +68,8 @@ export function deleteTask(id) {
   return request(`/api/tasks/${id}`, { method: "DELETE" })
 }
 
-export function fetchFinances() {
-  return request("/api/finances")
+export function fetchFinances(colocationId) {
+  return request(apiUrl("/api/finances", colocationId))
 }
 
 export function createFinance(data) {
@@ -78,8 +84,8 @@ export function deleteFinance(id) {
   return request(`/api/finances/${id}`, { method: "DELETE" })
 }
 
-export function fetchRecipes() {
-  return request("/api/recipes")
+export function fetchRecipes(colocationId) {
+  return request(apiUrl("/api/recipes", colocationId))
 }
 
 export function createRecipe(data) {
@@ -94,8 +100,8 @@ export function deleteRecipe(id) {
   return request(`/api/recipes/${id}`, { method: "DELETE" })
 }
 
-export function fetchShoppingList() {
-  return request("/api/shopping-list")
+export function fetchShoppingList(colocationId) {
+  return request(apiUrl("/api/shopping-list", colocationId))
 }
 
 export function createShoppingItem(data) {
@@ -110,8 +116,8 @@ export function deleteShoppingItem(id) {
   return request(`/api/shopping-list/${id}`, { method: "DELETE" })
 }
 
-export function fetchSubscriptions() {
-  return request("/api/subscriptions")
+export function fetchSubscriptions(colocationId) {
+  return request(apiUrl("/api/subscriptions", colocationId))
 }
 
 export function createSubscription(data) {

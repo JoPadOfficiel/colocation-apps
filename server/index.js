@@ -148,11 +148,14 @@ app.post('/api/colocation/join', (req, res) => {
 
 // Tasks CRUD
 app.get('/api/tasks', (req, res) => {
-  res.json({ data: tasks });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = tasks.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/tasks', (req, res) => {
-  const task = { id: genId(tasks, 'task'), colocationId: 'coloc-1', ...req.body };
+  const task = { id: genId(tasks, 'task'), ...req.body };
   tasks.push(task);
   db.save('tasks', tasks);
   res.status(201).json({ data: task });
@@ -176,11 +179,14 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 // Finances CRUD
 app.get('/api/finances', (req, res) => {
-  res.json({ data: finances });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = finances.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/finances', (req, res) => {
-  const finance = { id: genId(finances, 'fin'), colocationId: 'coloc-1', ...req.body };
+  const finance = { id: genId(finances, 'fin'), ...req.body };
   finances.push(finance);
   db.save('finances', finances);
   res.status(201).json({ data: finance });
@@ -204,11 +210,14 @@ app.delete('/api/finances/:id', (req, res) => {
 
 // Recipes CRUD
 app.get('/api/recipes', (req, res) => {
-  res.json({ data: recipes });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = recipes.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/recipes', (req, res) => {
-  const recipe = { id: genId(recipes, 'recipe'), colocationId: 'coloc-1', ...req.body };
+  const recipe = { id: genId(recipes, 'recipe'), ...req.body };
   recipes.push(recipe);
   db.save('recipes', recipes);
   res.status(201).json({ data: recipe });
@@ -232,11 +241,14 @@ app.delete('/api/recipes/:id', (req, res) => {
 
 // Shopping List CRUD
 app.get('/api/shopping-list', (req, res) => {
-  res.json({ data: shoppingList });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = shoppingList.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/shopping-list', (req, res) => {
-  const item = { id: genId(shoppingList, 'shop'), colocationId: 'coloc-1', ...req.body };
+  const item = { id: genId(shoppingList, 'shop'), ...req.body };
   shoppingList.push(item);
   db.save('shoppingList', shoppingList);
   res.status(201).json({ data: item });
@@ -260,11 +272,14 @@ app.delete('/api/shopping-list/:id', (req, res) => {
 
 // Subscriptions CRUD
 app.get('/api/subscriptions', (req, res) => {
-  res.json({ data: subscriptions });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = subscriptions.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/subscriptions', (req, res) => {
-  const sub = { id: genId(subscriptions, 'sub'), colocationId: 'coloc-1', ...req.body };
+  const sub = { id: genId(subscriptions, 'sub'), ...req.body };
   subscriptions.push(sub);
   db.save('subscriptions', subscriptions);
   res.status(201).json({ data: sub });
