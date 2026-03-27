@@ -290,7 +290,8 @@ app.get('/api/tasks', (req, res) => {
 });
 
 app.post('/api/tasks', (req, res) => {
-  const task = { id: genId(tasks, 'task'), ...req.body };
+  const now = new Date().toISOString();
+  const task = { id: genId(tasks, 'task'), ...req.body, createdAt: now, updatedAt: now };
   tasks.push(task);
   db.save('tasks', tasks);
   res.status(201).json({ data: task });
@@ -299,7 +300,7 @@ app.post('/api/tasks', (req, res) => {
 app.put('/api/tasks/:id', (req, res) => {
   const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
-  Object.assign(tasks[idx], req.body);
+  Object.assign(tasks[idx], req.body, { updatedAt: new Date().toISOString() });
   db.save('tasks', tasks);
   res.json({ data: tasks[idx] });
 });
@@ -321,8 +322,9 @@ app.get('/api/finances', (req, res) => {
 });
 
 app.post('/api/finances', (req, res) => {
+  const now = new Date().toISOString();
   const shared = req.body.shared !== undefined ? req.body.shared : true;
-  const finance = { id: genId(finances, 'fin'), shared, ...req.body };
+  const finance = { id: genId(finances, 'fin'), shared, ...req.body, createdAt: now, updatedAt: now };
   finances.push(finance);
   db.save('finances', finances);
   res.status(201).json({ data: finance });
@@ -336,7 +338,7 @@ app.put('/api/finances/:id', (req, res) => {
     // preserve existing shared value if not provided
     updates.shared = finances[idx].shared !== undefined ? finances[idx].shared : true;
   }
-  Object.assign(finances[idx], updates);
+  Object.assign(finances[idx], updates, { updatedAt: new Date().toISOString() });
   db.save('finances', finances);
   res.json({ data: finances[idx] });
 });
