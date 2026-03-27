@@ -1,23 +1,31 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState } from "react"
 
 const AuthContext = createContext(null)
 
 function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [colocation, setColocation] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
+    if (typeof window === "undefined") return null
     const saved = sessionStorage.getItem("colocapp_user")
-    if (saved) {
-      try {
-        const data = JSON.parse(saved)
-        setUser(data.user)
-        setColocation(data.colocation)
-      } catch {}
+    try {
+      return saved ? JSON.parse(saved).user : null
+    } catch (err) {
+      console.error("Failed to parse saved user", err)
+      return null
     }
-    setLoading(false)
-  }, [])
+  })
+
+  const [colocation, setColocation] = useState(() => {
+    if (typeof window === "undefined") return null
+    const saved = sessionStorage.getItem("colocapp_user")
+    try {
+      return saved ? JSON.parse(saved).colocation : null
+    } catch (err) {
+      console.error("Failed to parse saved colocation", err)
+      return null
+    }
+  })
+
+  const loading = false
 
   async function login(email, password) {
     const res = await fetch("/api/auth/login", {
@@ -38,9 +46,9 @@ function AuthProvider({ children }) {
       return { success: false, error: "Données utilisateur manquantes" }
     }
     setUser(json.data.user)
-    setColocation(json.data.colocation)
+    setColocation(json.data.colocation || null)
     sessionStorage.setItem("colocapp_user", JSON.stringify(json.data))
-    return { success: true }
+    return { success: true, needsOnboarding: !json.data.colocation }
   }
 
   async function register(name, email, password) {
@@ -62,9 +70,9 @@ function AuthProvider({ children }) {
       return { success: false, error: "Données utilisateur manquantes" }
     }
     setUser(json.data.user)
-    setColocation(json.data.colocation || null)
-    sessionStorage.setItem("colocapp_user", JSON.stringify(json.data))
-    return { success: true }
+    setColocation(null)
+    sessionStorage.setItem("colocapp_user", JSON.stringify({ ...json.data, colocation: null }))
+    return { success: true, needsOnboarding: true }
   }
 
   function updateColocation(coloc) {
@@ -75,8 +83,28 @@ function AuthProvider({ children }) {
         const data = JSON.parse(saved)
         data.colocation = coloc
         sessionStorage.setItem("colocapp_user", JSON.stringify(data))
-      } catch {}
+      } catch (err) {
+        console.error("Failed to update colocation in session", err)
+      }
     }
+  }
+
+  function updateUser(userData) {
+    setUser(userData)
+    const saved = sessionStorage.getItem("colocapp_user")
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        data.user = userData
+        sessionStorage.setItem("colocapp_user", JSON.stringify(data))
+      } catch (err) {
+        console.error("Failed to update user in session", err)
+      }
+    }
+  }
+
+  function joinColocation(colocationData) {
+    updateColocation(colocationData)
   }
 
   function logout() {
@@ -86,7 +114,7 @@ function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, colocation, loading, login, register, updateColocation, logout }}>
+    <AuthContext.Provider value={{ user, setUser, colocation, loading, login, register, updateColocation, updateUser, joinColocation, logout }}>
       {children}
     </AuthContext.Provider>
   )
@@ -100,4 +128,4 @@ function useAuth() {
   return context
 }
 
-export { AuthProvider, useAuth }
+export { AuthContext, AuthProvider, useAuth }

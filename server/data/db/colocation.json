@@ -1,0 +1,14 @@
+[
+  {
+    "id": "coloc-1",
+    "name": "Colocation Jopad & Co",
+    "invitationCode": "COLO-7829-X",
+    "totalFund": 330.5,
+    "createdAt": "2025-09-01T10:00:00Z",
+    "members": [
+      "user-1",
+      "user-2",
+      "user-3"
+    ]
+  }
+]

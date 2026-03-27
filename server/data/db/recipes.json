@@ -1,0 +1,73 @@
+[
+  {
+    "id": "recipe-1",
+    "dishName": "Pâtes Carbonara2",
+    "prepTime": 25,
+    "portions": 3,
+    "ingredients": [
+      "pâtes",
+      "lardons",
+      "oeufs",
+      "parmesan",
+      "poivre"
+    ],
+    "dietaryConstraints": [],
+    "category": "Plat",
+    "isFavorite": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "recipe-2",
+    "dishName": "Quiche Lorraine",
+    "prepTime": 45,
+    "portions": 4,
+    "ingredients": [
+      "pâte brisée",
+      "lardons",
+      "oeufs",
+      "crème fraîche",
+      "gruyère"
+    ],
+    "dietaryConstraints": [],
+    "category": "Plat",
+    "isFavorite": false,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "recipe-3",
+    "dishName": "Salade César",
+    "prepTime": 15,
+    "portions": 3,
+    "ingredients": [
+      "salade romaine",
+      "poulet",
+      "croûtons",
+      "parmesan",
+      "sauce césar"
+    ],
+    "dietaryConstraints": [],
+    "category": "Plat",
+    "isFavorite": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "recipe-4",
+    "dishName": "Pancakes du Dimanche",
+    "prepTime": 20,
+    "portions": 4,
+    "ingredients": [
+      "farine",
+      "oeufs",
+      "lait",
+      "beurre",
+      "sucre",
+      "levure"
+    ],
+    "dietaryConstraints": [
+      "végétarien"
+    ],
+    "category": "Petit-déjeuner",
+    "isFavorite": false,
+    "colocationId": "coloc-1"
+  }
+]

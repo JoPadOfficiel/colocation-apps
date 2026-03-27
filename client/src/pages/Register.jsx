@@ -8,11 +8,13 @@ import { Card, CardContent } from "@/components/ui/card"
 
 export default function Register() {
   const navigate = useNavigate()
-  const { register, user, loading: authLoading } = useAuth()
+  const { register, user, colocation, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    if (!authLoading && user) navigate("/dashboard", { replace: true })
-  }, [user, authLoading, navigate])
+    if (!authLoading && user) {
+      navigate(colocation ? "/dashboard" : "/onboarding", { replace: true })
+    }
+  }, [user, colocation, authLoading, navigate])
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -41,7 +43,7 @@ export default function Register() {
     try {
       const result = await register(name.trim(), email.trim().toLowerCase(), password)
       if (result.success) {
-        navigate("/dashboard", { replace: true })
+        navigate(result.needsOnboarding ? "/onboarding" : "/dashboard", { replace: true })
       } else {
         setError(result.error)
       }
@@ -55,7 +57,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="p-6">
-        <h1 className="text-2xl font-bold text-primary">ColocApp</h1>
+        <h1 className="text-2xl font-bold text-primary">LaBonneColoc</h1>
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 pb-12">
@@ -136,24 +138,6 @@ export default function Register() {
                   {loading ? "Inscription..." : "S'INSCRIRE"}
                 </Button>
 
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">ou</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Button type="button" variant="outline" className="w-full" disabled>
-                    Continuer avec Google
-                  </Button>
-                  <Button type="button" variant="outline" className="w-full" disabled>
-                    Continuer avec Facebook
-                  </Button>
-                </div>
-
                 <p className="text-center text-sm text-gray-600">
                   Déjà un compte ?{" "}
                   <Link to="/login" className="text-primary hover:underline">
@@ -167,7 +151,7 @@ export default function Register() {
       </main>
 
       <footer className="p-6 text-center text-sm text-gray-500">
-        © 2026 ColocApp. Tous droits réservés.
+        © 2026 LaBonneColoc. Tous droits réservés.
       </footer>
     </div>
   )

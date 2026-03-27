@@ -11,7 +11,7 @@ app.use(cors({
 app.use(express.json());
 
 // Load data from persistent storage
-let colocation = db.load('colocation');
+let colocations = db.load('colocation'); // always an array
 let users = db.load('users');
 let tasks = db.load('tasks');
 let finances = db.load('finances');
@@ -19,15 +19,47 @@ let subscriptions = db.load('subscriptions');
 let recipes = db.load('recipes');
 let shoppingList = db.load('shoppingList');
 
-let nextId = 100;
-const genId = (prefix) => `${prefix}-${nextId++}`;
+const getNextId = (items, prefix) => {
+  const maxId = items.reduce((max, item) => {
+    const match = String(item.id).match(/\d+/);
+    return match ? Math.max(max, parseInt(match[0])) : max;
+  }, 0);
+  return maxId + 1;
+};
+
+const genId = (items, prefix) => `${prefix}-${getNextId(items, prefix)}`;
 
 const stripPassword = ({ password, ...rest }) => rest;
 
 // Health check
 app.get('/api', (req, res) => {
-  res.json({ message: 'ColocApp API is running' });
+  res.json({ message: 'LaBonneColoc API is running' });
 });
+
+// Helper: Enrich colocation with full member data
+const enrichColocation = (coloc) => {
+  return {
+    ...coloc,
+    members: (coloc.members || []).map(memberId => {
+      // members can be a string ID or an object {userId, role}
+      const id = typeof memberId === 'object' ? memberId.userId : memberId;
+      const memberUser = users.find(u => u.id === id);
+      return memberUser ? stripPassword(memberUser) : { id, name: 'Inconnu', email: '' };
+    })
+  };
+};
+
+// Helper: generate unique invitation code
+function genInvitationCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code;
+  do {
+    const body = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const suffix = chars[Math.floor(Math.random() * chars.length)];
+    code = `COLO-${body}-${suffix}`;
+  } while (colocations.some(c => c.invitationCode === code));
+  return code;
+}
 
 // Auth
 app.post('/api/auth/login', (req, res) => {
@@ -39,7 +71,10 @@ app.post('/api/auth/login', (req, res) => {
   if (!user) {
     return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
   }
-  res.json({ data: { user: stripPassword(user), colocation } });
+  const userColoc = user.colocationId
+    ? (colocations.find(c => c.id === user.colocationId) || null)
+    : null;
+  res.json({ data: { user: stripPassword(user), colocation: userColoc ? enrichColocation(userColoc) : null } });
 });
 
 app.post('/api/auth/register', (req, res) => {
@@ -55,20 +90,18 @@ app.post('/api/auth/register', (req, res) => {
     return res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
   }
   const newUser = {
-    id: genId('user'),
+    id: genId(users, 'user'),
     name,
     email: email.toLowerCase(),
     password,
     profilePhoto: '',
     role: 'member',
-    colocationId: 'coloc-1',
+    colocationId: null,
     dietaryConstraints: [],
   };
   users.push(newUser);
-  colocation.members.push(newUser.id);
   db.save('users', users);
-  db.save('colocation', colocation);
-  res.status(201).json({ data: { user: stripPassword(newUser), colocation } });
+  res.status(201).json({ data: { user: stripPassword(newUser), colocation: null } });
 });
 
 app.post('/api/auth/forgot-password', (req, res) => {
@@ -88,42 +121,177 @@ app.get('/api/users', (req, res) => {
 app.put('/api/users/:id', (req, res) => {
   const idx = users.findIndex((u) => u.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-  const { id, password, role, ...allowed } = req.body;
+  const user = users[idx];
+  const { id, password, role, oldPassword, newPassword, ...allowed } = req.body;
+  if (newPassword) {
+    if (!oldPassword) return res.status(400).json({ error: 'Ancien mot de passe requis' });
+    if (user.password !== oldPassword) return res.status(403).json({ error: 'Ancien mot de passe incorrect' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Le nouveau mot de passe doit faire au moins 8 caractères' });
+    user.password = newPassword;
+  }
   Object.assign(users[idx], allowed);
   db.save('users', users);
   res.json({ data: stripPassword(users[idx]) });
 });
 
-// Colocation
-app.get('/api/colocation', (req, res) => {
-  res.json({ data: colocation });
+app.delete('/api/users/:id', (req, res) => {
+  const idx = users.findIndex((u) => u.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+  const user = users[idx];
+  // Remove user from their colocation's members array
+  if (user.colocationId) {
+    const coloc = colocations.find(c => c.id === user.colocationId);
+    if (coloc) {
+      coloc.members = coloc.members.filter(m => {
+        const id = typeof m === 'object' ? m.userId : m;
+        return id !== user.id;
+      });
+      db.save('colocation', colocations);
+    }
+  }
+  users.splice(idx, 1);
+  db.save('users', users);
+  res.json({ data: { message: 'Compte supprimé' } });
 });
 
-app.post('/api/colocation', (req, res) => {
-  const { name } = req.body || {};
-  if (!name) return res.status(400).json({ error: 'Nom requis' });
-  const code = `COLO-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 3).toUpperCase()}`;
-  Object.assign(colocation, { name, invitationCode: code });
-  db.save('colocation', colocation);
-  res.status(201).json({ data: colocation });
+// Colocation
+app.get('/api/colocation', (req, res) => {
+  res.json({ data: colocations.map(enrichColocation) });
+});
+
+app.get('/api/colocation/:id', (req, res) => {
+  const coloc = colocations.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+  res.json({ data: enrichColocation(coloc) });
+});
+
+app.post('/api/colocation/preview', (req, res) => {
+  const { invitationCode } = req.body || {};
+  if (!invitationCode) return res.status(400).json({ error: 'invitationCode requis' });
+  const list = colocations;
+  const coloc = list.find(c => c.invitationCode === invitationCode);
+  if (!coloc) return res.status(404).json({ error: "Code d'invitation invalide" });
+  const members = coloc.members.map(memberId => {
+    const user = users.find(u => u.id === memberId);
+    return { name: user?.name || 'Inconnu', role: user?.role || 'member' };
+  });
+  res.json({ data: { id: coloc.id, name: coloc.name, memberCount: members.length, members } });
+});
+
+app.put('/api/colocation/:id', (req, res) => {
+  const coloc = colocations.find(c => c.id === req.params.id);
+  if (!coloc) {
+    return res.status(404).json({ error: 'Colocation non trouvée' });
+  }
+  const { totalFund, name, paidBy } = req.body;
+  if (totalFund !== undefined) {
+    if (totalFund < 0) return res.status(400).json({ error: 'Le montant doit être positif' });
+    coloc.totalFund = (coloc.totalFund || 0) + totalFund;
+    const contribution = {
+      id: genId(finances, 'fin'),
+      colocationId: coloc.id,
+      type: 'contribution',
+      title: 'Contribution à la cagnotte',
+      amount: totalFund,
+      date: new Date().toISOString().split('T')[0],
+      paidBy: paidBy || null,
+      shared: false,
+    };
+    finances.push(contribution);
+    db.save('finances', finances);
+  }
+  if (name) coloc.name = name;
+  db.save('colocation', colocations);
+  res.json({ data: enrichColocation(coloc) });
 });
 
 app.post('/api/colocation/join', (req, res) => {
-  const { code } = req.body || {};
-  if (!code) return res.status(400).json({ error: 'Code requis' });
-  if (colocation.invitationCode.toUpperCase() !== code.toUpperCase()) {
+  const { code, invitationCode, userId } = req.body || {};
+  const resolvedCode = code || invitationCode;
+  if (!resolvedCode) return res.status(400).json({ error: 'Code requis' });
+  const coloc = colocations.find(c => c.invitationCode.toUpperCase() === resolvedCode.toUpperCase());
+  if (!coloc) {
     return res.status(404).json({ error: 'Code d\'invitation invalide' });
   }
-  res.json({ data: colocation });
+  if (userId) {
+    const user = users.find((u) => u.id === userId);
+    if (user) {
+      const alreadyMember = coloc.members.some(m => {
+        const id = typeof m === 'object' ? m.userId : m;
+        return id === userId;
+      });
+      if (!alreadyMember) {
+        coloc.members.push(userId);
+        db.save('colocation', colocations);
+      }
+      user.colocationId = coloc.id;
+      db.save('users', users);
+    }
+  }
+  res.json({ data: enrichColocation(coloc) });
+});
+
+app.post('/api/colocation', (req, res) => {
+  const { name, creatorId } = req.body || {};
+  if (!name || !creatorId) return res.status(400).json({ error: 'name et creatorId requis' });
+  const newColoc = {
+    id: genId(colocations, 'coloc'),
+    name,
+    invitationCode: genInvitationCode(),
+    totalFund: 0,
+    createdAt: new Date().toISOString(),
+    members: [{ userId: creatorId, role: 'admin' }],
+  };
+  colocations.push(newColoc);
+  db.save('colocation', colocations);
+  const creator = users.find(u => u.id === creatorId);
+  if (creator) {
+    creator.colocationId = newColoc.id;
+    db.save('users', users);
+  }
+  res.status(201).json({ data: enrichColocation(newColoc) });
+});
+
+app.delete('/api/colocation/:id', (req, res) => {
+  const colocIdx = colocations.findIndex(c => c.id === req.params.id);
+  if (colocIdx === -1) return res.status(404).json({ error: 'Colocation non trouvée' });
+  const coloc = colocations[colocIdx];
+  const { confirmName } = req.body || {};
+  if (!confirmName || confirmName !== coloc.name) {
+    return res.status(400).json({ error: 'Le nom de confirmation ne correspond pas' });
+  }
+  const colocId = coloc.id;
+  // Cascade delete: remove all related data
+  tasks = tasks.filter(t => t.colocationId !== colocId);
+  finances = finances.filter(f => f.colocationId !== colocId);
+  subscriptions = subscriptions.filter(s => s.colocationId !== colocId);
+  recipes = recipes.filter(r => r.colocationId !== colocId);
+  shoppingList = shoppingList.filter(s => s.colocationId !== colocId);
+  db.save('tasks', tasks);
+  db.save('finances', finances);
+  db.save('subscriptions', subscriptions);
+  db.save('recipes', recipes);
+  db.save('shoppingList', shoppingList);
+  // Reset colocationId to null for all member users
+  users = users.map(u => u.colocationId === colocId ? { ...u, colocationId: null } : u);
+  db.save('users', users);
+  // Remove the colocation
+  colocations.splice(colocIdx, 1);
+  db.save('colocation', colocations);
+  res.json({ data: { message: 'Colocation supprimée' } });
 });
 
 // Tasks CRUD
 app.get('/api/tasks', (req, res) => {
-  res.json({ data: tasks });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = tasks.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/tasks', (req, res) => {
-  const task = { id: genId('task'), colocationId: 'coloc-1', ...req.body };
+  const now = new Date().toISOString();
+  const task = { id: genId(tasks, 'task'), ...req.body, createdAt: now, updatedAt: now };
   tasks.push(task);
   db.save('tasks', tasks);
   res.status(201).json({ data: task });
@@ -132,7 +300,7 @@ app.post('/api/tasks', (req, res) => {
 app.put('/api/tasks/:id', (req, res) => {
   const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
-  Object.assign(tasks[idx], req.body);
+  Object.assign(tasks[idx], req.body, { updatedAt: new Date().toISOString() });
   db.save('tasks', tasks);
   res.json({ data: tasks[idx] });
 });
@@ -147,11 +315,16 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 // Finances CRUD
 app.get('/api/finances', (req, res) => {
-  res.json({ data: finances });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = finances.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/finances', (req, res) => {
-  const finance = { id: genId('fin'), colocationId: 'coloc-1', ...req.body };
+  const now = new Date().toISOString();
+  const shared = req.body.shared !== undefined ? req.body.shared : true;
+  const finance = { id: genId(finances, 'fin'), shared, ...req.body, createdAt: now, updatedAt: now };
   finances.push(finance);
   db.save('finances', finances);
   res.status(201).json({ data: finance });
@@ -160,7 +333,12 @@ app.post('/api/finances', (req, res) => {
 app.put('/api/finances/:id', (req, res) => {
   const idx = finances.findIndex((f) => f.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Dépense non trouvée' });
-  Object.assign(finances[idx], req.body);
+  const updates = { ...req.body };
+  if (updates.shared === undefined) {
+    // preserve existing shared value if not provided
+    updates.shared = finances[idx].shared !== undefined ? finances[idx].shared : true;
+  }
+  Object.assign(finances[idx], updates, { updatedAt: new Date().toISOString() });
   db.save('finances', finances);
   res.json({ data: finances[idx] });
 });
@@ -175,11 +353,14 @@ app.delete('/api/finances/:id', (req, res) => {
 
 // Recipes CRUD
 app.get('/api/recipes', (req, res) => {
-  res.json({ data: recipes });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = recipes.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/recipes', (req, res) => {
-  const recipe = { id: genId('recipe'), colocationId: 'coloc-1', ...req.body };
+  const recipe = { id: genId(recipes, 'recipe'), ...req.body };
   recipes.push(recipe);
   db.save('recipes', recipes);
   res.status(201).json({ data: recipe });
@@ -203,11 +384,14 @@ app.delete('/api/recipes/:id', (req, res) => {
 
 // Shopping List CRUD
 app.get('/api/shopping-list', (req, res) => {
-  res.json({ data: shoppingList });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = shoppingList.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/shopping-list', (req, res) => {
-  const item = { id: genId('shop'), colocationId: 'coloc-1', ...req.body };
+  const item = { id: genId(shoppingList, 'shop'), ...req.body };
   shoppingList.push(item);
   db.save('shoppingList', shoppingList);
   res.status(201).json({ data: item });
@@ -231,11 +415,14 @@ app.delete('/api/shopping-list/:id', (req, res) => {
 
 // Subscriptions CRUD
 app.get('/api/subscriptions', (req, res) => {
-  res.json({ data: subscriptions });
+  const { colocationId } = req.query;
+  if (!colocationId) return res.status(400).json({ error: 'colocationId requis' });
+  const items = subscriptions.filter(item => item.colocationId === colocationId);
+  res.json({ data: items });
 });
 
 app.post('/api/subscriptions', (req, res) => {
-  const sub = { id: genId('sub'), colocationId: 'coloc-1', ...req.body };
+  const sub = { id: genId(subscriptions, 'sub'), ...req.body };
   subscriptions.push(sub);
   db.save('subscriptions', subscriptions);
   res.status(201).json({ data: sub });
@@ -255,6 +442,94 @@ app.delete('/api/subscriptions/:id', (req, res) => {
   const [removed] = subscriptions.splice(idx, 1);
   db.save('subscriptions', subscriptions);
   res.json({ data: removed });
+});
+
+// Helper: resolve member ID from string or object format
+// Raw DB stores either plain string IDs or objects with {userId, role}
+function resolveMemberId(m) {
+  return typeof m === 'object' && m !== null ? (m.userId || m.id) : m;
+}
+
+// Helper: count admins in a colocation
+function countAdmins(coloc, usersList) {
+  return (coloc.members || []).reduce((count, m) => {
+    const id = resolveMemberId(m);
+    // Role can be on the member object or on the user record
+    const memberRole = (typeof m === 'object' && m !== null && m.role) ? m.role : null;
+    const userRecord = usersList.find(u => u.id === id);
+    const role = memberRole || userRecord?.role || 'member';
+    return role === 'admin' ? count + 1 : count;
+  }, 0);
+}
+
+// PUT /api/colocation/:id/members/:userId — Change member role
+app.put('/api/colocation/:id/members/:userId', (req, res) => {
+  const { role } = req.body || {};
+  if (!role || !['admin', 'member'].includes(role)) {
+    return res.status(400).json({ error: 'Le rôle doit être "admin" ou "member"' });
+  }
+
+  const coloc = colocations.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+
+  const { userId } = req.params;
+  const memberIdx = (coloc.members || []).findIndex(m => resolveMemberId(m) === userId);
+  if (memberIdx === -1) return res.status(404).json({ error: 'Membre non trouvé' });
+
+  // Protect last admin: cannot demote if only one admin remains
+  if (role === 'member') {
+    const adminCount = countAdmins(coloc, users);
+    const m = coloc.members[memberIdx];
+    const memberRole = (typeof m === 'object' && m !== null && m.role) ? m.role : null;
+    const userRecord = users.find(u => u.id === userId);
+    const currentRole = memberRole || userRecord?.role || 'member';
+    if (currentRole === 'admin' && adminCount <= 1) {
+      return res.status(400).json({ error: 'Impossible de rétrograder le dernier administrateur' });
+    }
+  }
+
+  // Update role: always store as { userId, role } to avoid polluting the array with enriched objects
+  coloc.members[memberIdx] = { userId, role };
+  // Also update the user record for consistency
+  const userToUpdate = users.find(u => u.id === userId);
+  if (userToUpdate) {
+    userToUpdate.role = role;
+    db.save('users', users);
+  }
+  db.save('colocation', colocations);
+  res.json({ data: enrichColocation(coloc) });
+});
+
+// DELETE /api/colocation/:id/members/:userId — Remove member
+app.delete('/api/colocation/:id/members/:userId', (req, res) => {
+  const coloc = colocations.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+
+  const { userId } = req.params;
+  const memberIdx = (coloc.members || []).findIndex(m => resolveMemberId(m) === userId);
+  if (memberIdx === -1) return res.status(404).json({ error: 'Membre non trouvé' });
+
+  // Protect last admin from being removed
+  const m = coloc.members[memberIdx];
+  const memberRole = (typeof m === 'object' && m !== null && m.role) ? m.role : null;
+  const userRecord = users.find(u => u.id === userId);
+  const currentRole = memberRole || userRecord?.role || 'member';
+  if (currentRole === 'admin' && countAdmins(coloc, users) <= 1) {
+    return res.status(400).json({ error: 'Impossible de supprimer le dernier administrateur' });
+  }
+
+  // Remove member from colocation
+  coloc.members.splice(memberIdx, 1);
+  db.save('colocation', colocations);
+
+  // Clear user's colocationId and reset role
+  if (userRecord) {
+    userRecord.colocationId = null;
+    userRecord.role = 'member';
+    db.save('users', users);
+  }
+
+  res.json({ data: enrichColocation(coloc) });
 });
 
 // Error handler

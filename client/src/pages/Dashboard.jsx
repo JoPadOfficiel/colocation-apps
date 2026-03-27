@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { Wallet, CheckCircle, ShoppingCart, CreditCard, Plus, TrendingUp, Clock } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -34,35 +34,40 @@ function WidgetCard({ icon: Icon, iconColor, title, value, badge, badgeColor, on
   )
 }
 
+const MONTH_COLORS = ["bg-blue-500", "bg-purple-500", "bg-amber-500", "bg-green-500", "bg-rose-500", "bg-cyan-500", "bg-orange-500", "bg-teal-500", "bg-indigo-500", "bg-pink-500", "bg-lime-500", "bg-sky-500"]
+
 function ExpenseChart({ finances }) {
-  const byType = {}
+  const byMonth = {}
   finances.forEach((f) => {
-    byType[f.type] = (byType[f.type] || 0) + f.amount
+    if (!f.date) return
+    const month = new Date(f.date).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
+    byMonth[month] = (byMonth[month] || 0) + f.amount
   })
-  const entries = Object.entries(byType).sort((a, b) => b[1] - a[1])
+  const entries = Object.entries(byMonth).sort((a, b) => {
+    const parse = (s) => { const [m, y] = s.split(" "); return new Date(`${m} 1 ${y}`) }
+    return parse(a[0]) - parse(b[0])
+  })
   const max = Math.max(...entries.map(([, v]) => v), 1)
-  const typeLabels = { shopping: "Courses", rent: "Loyer", utility: "Services", entertainment: "Sorties" }
-  const typeColors = { shopping: "bg-blue-500", rent: "bg-purple-500", utility: "bg-amber-500", entertainment: "bg-green-500" }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <TrendingUp className="w-5 h-5 text-blue-600" />
-          Dépenses par catégorie
+          Dépenses par mois
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {entries.map(([type, amount]) => (
-            <div key={type} className="space-y-1">
+          {entries.map(([month, amount], i) => (
+            <div key={month} className="space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{typeLabels[type] || type}</span>
+                <span className="text-gray-600 capitalize">{month}</span>
                 <span className="font-medium">{amount.toFixed(2)} €</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${typeColors[type] || "bg-gray-400"}`}
+                  className={`h-full rounded-full ${MONTH_COLORS[i % MONTH_COLORS.length]}`}
                   style={{ width: `${(amount / max) * 100}%` }}
                 />
               </div>
@@ -75,6 +80,15 @@ function ExpenseChart({ finances }) {
       </CardContent>
     </Card>
   )
+}
+
+function timeAgo(date) {
+  const diff = Date.now() - date.getTime()
+  const days = Math.floor(diff / 86400000)
+  if (days > 0) return `il y a ${days}j`
+  const hours = Math.floor(diff / 3600000)
+  if (hours > 0) return `il y a ${hours}h`
+  return "à l'instant"
 }
 
 function RecentActivity({ finances, tasks, users }) {
@@ -91,21 +105,12 @@ function RecentActivity({ finances, tasks, users }) {
     ...tasks.filter((t) => t.status === "Terminée").map((t) => ({
       id: t.id,
       text: `${userMap[t.assignedTo] || "Quelqu'un"} a terminé "${t.title}"`,
-      date: new Date(t.dueDate),
+      date: new Date(t.updatedAt || t.dueDate),
       type: "task",
     })),
   ]
     .sort((a, b) => b.date - a.date)
     .slice(0, 3)
-
-  function timeAgo(date) {
-    const diff = Date.now() - date.getTime()
-    const days = Math.floor(diff / 86400000)
-    if (days > 0) return `il y a ${days}j`
-    const hours = Math.floor(diff / 3600000)
-    if (hours > 0) return `il y a ${hours}h`
-    return "à l'instant"
-  }
 
   return (
     <Card>
@@ -139,9 +144,11 @@ function RecentActivity({ finances, tasks, users }) {
 function BalanceTable({ finances, users }) {
   const totals = {}
   users.forEach((u) => { totals[u.id] = 0 })
-  const totalAll = finances.reduce((s, f) => s + f.amount, 0)
+  // Only shared expenses (not contributions) count for balance
+  const sharedExpenses = finances.filter(f => f.shared === true && f.type !== 'contribution')
+  const totalAll = sharedExpenses.reduce((s, f) => s + f.amount, 0)
   const perPerson = totalAll / (users.length || 1)
-  finances.forEach((f) => {
+  sharedExpenses.forEach((f) => {
     if (totals[f.paidBy] !== undefined) totals[f.paidBy] += f.amount
   })
 
@@ -176,18 +183,21 @@ function BalanceTable({ finances, users }) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, colocation } = useAuth()
   const [data, setData] = useState({ tasks: [], finances: [], shopping: [], subscriptions: [], users: [] })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([fetchTasks(), fetchFinances(), fetchShoppingList(), fetchSubscriptions(), fetchUsers()])
+    if (!colocation?.id) return
+    setLoading(true)
+    Promise.all([fetchTasks(colocation.id), fetchFinances(colocation.id), fetchShoppingList(colocation.id), fetchSubscriptions(colocation.id), fetchUsers()])
       .then(([tasks, finances, shopping, subscriptions, users]) => {
         setData({ tasks, finances, shopping, subscriptions, users })
       })
       .catch((err) => console.error("Dashboard load error:", err))
       .finally(() => setLoading(false))
-  }, [])
+  }, [colocation?.id, location.key])
 
   const firstName = user?.name?.split(" ")[0] || "Utilisateur"
   const urgentTasks = data.tasks.filter((t) => t.status === "À faire" || t.status === "En cours")
@@ -205,7 +215,7 @@ export default function Dashboard() {
             Bonjour, {firstName} 👋
           </h1>
           <p className="text-gray-500 mt-1">
-            Voici ce qui se passe dans votre colocation aujourd'hui
+            Voici ce qui se passe dans votre colocation aujourd&apos;hui
           </p>
         </div>
         <Button onClick={() => navigate("/finances")} className="self-start sm:self-auto">

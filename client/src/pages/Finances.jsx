@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Wallet, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchFinances, createFinance, updateFinance, deleteFinance, fetchColocation, updateColocation as apiUpdateColocation } from "@/lib/api";
 import FinancesChart from "@/components/FinancesChart";
 
 export default function Finances() {
-  const { user, colocation } = useAuth();
+  const { user, colocation, updateColocation: updateColocationCtx } = useAuth();
   const [finances, setFinances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,6 +32,12 @@ export default function Finances() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
 
+  // Contribution dialog state
+  const [isContribDialogOpen, setIsContribDialogOpen] = useState(false);
+  const [contribAmount, setContribAmount] = useState("");
+  const [contribError, setContribError] = useState("");
+  const [isContribSubmitting, setIsContribSubmitting] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -40,13 +47,15 @@ export default function Finances() {
     title: "",
     amount: "",
     date: "",
-    paidBy: ""
+    paidBy: "",
+    shared: true
   });
+  const [formErrors, setFormErrors] = useState({});
 
   // Fonction de calcul des métriques réutilisable (évite duplication)
-  const calculateMetrics = (financesData) => {
+  const calculateMetrics = useCallback((financesData) => {
     const nombreColocataires = colocation?.members?.length || 0;
-    
+
     // Protection contre division par zéro
     if (nombreColocataires === 0) {
       setCagnotte(colocation?.totalFund || 0);
@@ -55,10 +64,12 @@ export default function Finances() {
       setTendance(0);
       return;
     }
-    
-    const totalDepenses = financesData.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    // Only shared expenses (not contributions) count for balance
+    const sharedExpenses = financesData.filter(f => f.shared === true && f.type !== 'contribution');
+    const totalDepenses = sharedExpenses.reduce((sum, f) => sum + (f.amount || 0), 0);
     const partParPersonne = totalDepenses / nombreColocataires;
-    const mesDepenses = financesData
+    const mesDepenses = sharedExpenses
       .filter(f => f.paidBy === user?.id)
       .reduce((sum, f) => sum + (f.amount || 0), 0);
     
@@ -96,7 +107,7 @@ export default function Finances() {
 
     const tendanceCalculee = thisMonthTotal - lastMonthTotal;
     setTendance(tendanceCalculee);
-  };
+  }, [colocation, user]);
 
   useEffect(() => {
     // Validation précoce des dépendances
@@ -105,25 +116,12 @@ export default function Finances() {
       return;
     }
 
-    const fetchFinances = async () => {
+    const loadFinances = async () => {
       try {
-        const res = await fetch("/api/finances");
-        
-        // Vérification du statut HTTP
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        
-        const json = await res.json();
-        
-        // Validation de la structure de la réponse
-        if (!json.data || !Array.isArray(json.data)) {
-          throw new Error("Format de réponse invalide");
-        }
-        
-        setFinances(json.data);
-        calculateMetrics(json.data);
-        
+        const data = await fetchFinances(colocation?.id);
+        setFinances(data);
+        calculateMetrics(data);
+
       } catch (error) {
         console.error("Erreur lors du chargement des finances:", error);
         setError(error.message || "Erreur lors du chargement des données");
@@ -132,8 +130,8 @@ export default function Finances() {
       }
     };
 
-    fetchFinances();
-  }, [colocation, user]);
+    loadFinances();
+  }, [colocation, user, calculateMetrics]);
 
   const formatMontant = (montant) => {
     // Gestion des valeurs non finies (NaN, Infinity)
@@ -163,15 +161,18 @@ export default function Finances() {
   const calculateBalance = (financesData, members) => {
     if (!members || members.length === 0) return [];
 
+    // Only shared expenses (not contributions) count for balance
+    const sharedExpenses = financesData.filter(f => f.shared === true && f.type !== 'contribution');
+
     // Validation et conversion des montants
-    const totalDepenses = financesData.reduce((sum, f) => {
+    const totalDepenses = sharedExpenses.reduce((sum, f) => {
       const amount = Number(f.amount) || 0;
       return sum + amount;
     }, 0);
     const partParPersonne = Math.round((totalDepenses / members.length) * 100) / 100;
 
     const balances = members.map(member => {
-      const montantPaye = financesData
+      const montantPaye = sharedExpenses
         .filter(f => f.paidBy === member.id)
         .reduce((sum, f) => {
           const amount = Number(f.amount) || 0;
@@ -231,15 +232,17 @@ export default function Finances() {
       .map(key => monthlyMap[key]);
   };
 
-  // Calculer les données pour l'affichage
-  const balances = calculateBalance(finances, colocation?.members || []);
+  // Calculer les données pour l'affichage (contributions exclues du calcul d'équilibre)
+  const expensesForBalance = finances.filter(f => f.type !== 'contribution');
+  const balances = calculateBalance(expensesForBalance, colocation?.members || []);
   const monthlyData = calculateMonthlyData(finances);
 
   // Pagination logic avec protection contre division par zéro
-  const totalPages = finances.length > 0 ? Math.ceil(finances.length / itemsPerPage) : 1;
+  const sortedFinances = [...finances].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const totalPages = sortedFinances.length > 0 ? Math.ceil(sortedFinances.length / itemsPerPage) : 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedExpenses = finances.slice(startIndex, endIndex);
+  const paginatedExpenses = sortedFinances.slice(startIndex, endIndex);
 
   const handlePrevious = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -260,7 +263,8 @@ export default function Finances() {
         title: expense.title,
         amount: expense.amount.toString(),
         date: expense.date,
-        paidBy: expense.paidBy
+        paidBy: expense.paidBy,
+        shared: expense.shared !== undefined ? expense.shared : true
       });
     } else {
       setEditingExpense(null);
@@ -268,42 +272,77 @@ export default function Finances() {
         title: "",
         amount: "",
         date: new Date().toISOString().split('T')[0],
-        paidBy: user?.id || ""
+        paidBy: user?.id || "",
+        shared: true
       });
     }
+    setFormErrors({});
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingExpense(null);
-    setFormData({ title: "", amount: "", date: "", paidBy: "" });
+    setFormData({ title: "", amount: "", date: "", paidBy: "", shared: true });
+    setFormErrors({});
+  };
+
+  const handleOpenContribDialog = () => {
+    setContribAmount("");
+    setContribError("");
+    setIsContribDialogOpen(true);
+  };
+
+  const handleContribSubmit = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(contribAmount);
+    if (!contribAmount || isNaN(amount) || amount <= 0) {
+      setContribError("Le montant doit être supérieur à 0");
+      return;
+    }
+    setIsContribSubmitting(true);
+    try {
+      const updatedColoc = await apiUpdateColocation(colocation.id, {
+        totalFund: amount,
+        paidBy: user?.id,
+      });
+      // Update colocation in context so cagnotte card refreshes
+      updateColocationCtx(updatedColoc);
+      // Update cagnotte directly from server response (avoid stale closure)
+      setCagnotte(updatedColoc.totalFund || 0);
+      // Refetch finances to show new contribution entry in history
+      const data = await fetchFinances(colocation?.id);
+      setFinances(data);
+      setIsContribDialogOpen(false);
+    } catch (err) {
+      setContribError(err.message || "Erreur lors de la contribution");
+    } finally {
+      setIsContribSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Prévenir les soumissions multiples
     if (isSubmitting) return;
     
-    // Validation
-    if (!formData.title || !formData.amount || !formData.date || !formData.paidBy) {
-      alert("Tous les champs sont requis");
-      return;
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = "Le titre est requis";
+    if (!formData.date) newErrors.date = "La date est requise";
+    if (!formData.paidBy) newErrors.paidBy = "Le payeur est requis";
+    else if (!colocation?.members?.some(m => m.id === formData.paidBy)) {
+      newErrors.paidBy = "Le membre sélectionné n'existe pas";
     }
 
     const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      alert("Le montant doit être supérieur à 0");
-      return;
+    if (!formData.amount) {
+      newErrors.amount = "Le montant est requis";
+    } else if (isNaN(amount) || amount <= 0) {
+      newErrors.amount = "Le montant doit être supérieur à 0";
     }
 
-    // Validation: paidBy doit exister dans colocation.members
-    const memberExists = colocation?.members?.some(m => m.id === formData.paidBy);
-    if (!memberExists) {
-      alert("Le membre sélectionné n'existe pas dans la colocation");
-      return;
-    }
+    setFormErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsSubmitting(true);
     try {
@@ -313,45 +352,21 @@ export default function Finances() {
         date: formData.date,
         paidBy: formData.paidBy,
         type: "expense",
-        colocationId: colocation.id
+        colocationId: colocation.id,
+        shared: formData.shared
       };
 
-      let res;
       if (editingExpense) {
-        // Update
-        res = await fetch(`/api/finances/${editingExpense.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(expenseData)
-        });
+        await updateFinance(editingExpense.id, expenseData);
       } else {
-        // Create
-        res = await fetch("/api/finances", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(expenseData)
-        });
-      }
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        await createFinance(expenseData);
       }
 
       // Refetch finances
-      const fetchRes = await fetch("/api/finances");
-      if (!fetchRes.ok) {
-        throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
-      }
-      
-      const json = await fetchRes.json();
-      if (json.data && Array.isArray(json.data)) {
-        setFinances(json.data);
-        // Réinitialiser la pagination à la page 1 après modification
-        setCurrentPage(1);
-        // Utiliser la fonction centralisée pour recalculer les métriques
-        calculateMetrics(json.data);
-      }
-
+      const data = await fetchFinances(colocation?.id);
+      setFinances(data);
+      setCurrentPage(1);
+      calculateMetrics(data);
       handleCloseDialog();
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
@@ -371,35 +386,22 @@ export default function Finances() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/finances/${expenseToDelete.id}`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
+      await deleteFinance(expenseToDelete.id);
 
       // Refetch finances
-      const fetchRes = await fetch("/api/finances");
-      if (!fetchRes.ok) {
-        throw new Error(`HTTP ${fetchRes.status}: ${fetchRes.statusText}`);
+      const data = await fetchFinances(colocation?.id);
+      setFinances(data);
+
+      // Ajuster la pagination si la page actuelle devient vide
+      const newTotalPages = Math.ceil(data.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      } else if (data.length === 0) {
+        setCurrentPage(1);
       }
-      
-      const json = await fetchRes.json();
-      if (json.data && Array.isArray(json.data)) {
-        setFinances(json.data);
-        
-        // Ajuster la pagination si la page actuelle devient vide
-        const newTotalPages = Math.ceil(json.data.length / itemsPerPage);
-        if (currentPage > newTotalPages && newTotalPages > 0) {
-          setCurrentPage(newTotalPages);
-        } else if (json.data.length === 0) {
-          setCurrentPage(1);
-        }
-        
-        // Utiliser la fonction centralisée pour recalculer les métriques
-        calculateMetrics(json.data);
-      }
+
+      // Utiliser la fonction centralisée pour recalculer les métriques
+      calculateMetrics(data);
 
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
@@ -458,11 +460,11 @@ export default function Finances() {
             <div className="text-3xl font-bold text-[#0e141b]">
               {formatMontant(cagnotte)}
             </div>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={`mt-2 ${
-                tendance >= 0 
-                  ? "border-[#22c55e] text-[#22c55e]" 
+                tendance >= 0
+                  ? "border-[#22c55e] text-[#22c55e]"
                   : "border-[#ef4444] text-[#ef4444]"
               }`}
             >
@@ -473,6 +475,15 @@ export default function Finances() {
               )}
               {tendance >= 0 ? "+" : ""}{formatMontant(Math.abs(tendance)).replace(" €", "€")} ce mois
             </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={handleOpenContribDialog}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter à la cagnotte
+            </Button>
           </CardContent>
         </Card>
 
@@ -526,6 +537,7 @@ export default function Finances() {
                   <TableHead>Date</TableHead>
                   <TableHead>Payé par</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Montant</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -533,7 +545,7 @@ export default function Finances() {
               <TableBody>
                 {paginatedExpenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-[#4e7397]">
+                    <TableCell colSpan={6} className="text-center text-[#4e7397]">
                       Aucune dépense enregistrée
                     </TableCell>
                   </TableRow>
@@ -543,13 +555,26 @@ export default function Finances() {
                       <TableCell>{formatDate(expense.date)}</TableCell>
                       <TableCell>{getUserName(expense.paidBy)}</TableCell>
                       <TableCell>{expense.title}</TableCell>
+                      <TableCell>
+                        {expense.type === 'contribution' ? (
+                          <Badge variant="outline" className="border-[#22c55e] text-[#22c55e] bg-green-50 hover:bg-green-50">
+                            Contribution
+                          </Badge>
+                        ) : expense.shared === false ? (
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">
+                            Personnelle
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                            Partagée
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">{formatMontant(expense.amount)}</TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
+                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1 hover:bg-accent">
+                            <MoreVertical className="h-4 w-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleOpenDialog(expense)}>
@@ -575,7 +600,7 @@ export default function Finances() {
           {finances.length > 0 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-[#4e7397]">
-                {startIndex + 1} à {Math.min(endIndex, finances.length)} sur {finances.length} résultats
+                {startIndex + 1} à {Math.min(endIndex, sortedFinances.length)} sur {sortedFinances.length} résultats
               </p>
               <div className="flex gap-2">
                 <Button
@@ -692,6 +717,7 @@ export default function Finances() {
                 placeholder="Ex: Courses Carrefour"
                 required
               />
+              {formErrors.title && <p className="text-sm text-red-500 mt-1">{formErrors.title}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Montant (€)</Label>
@@ -705,6 +731,7 @@ export default function Finances() {
                 placeholder="0.00"
                 required
               />
+              {formErrors.amount && <p className="text-sm text-red-500 mt-1">{formErrors.amount}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
@@ -715,25 +742,51 @@ export default function Finances() {
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 required
               />
+              {formErrors.date && <p className="text-sm text-red-500 mt-1">{formErrors.date}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paidBy">Payé par</Label>
+              <Label>Payé par</Label>
               <Select
                 value={formData.paidBy}
-                onValueChange={(value) => setFormData({ ...formData, paidBy: value })}
-                required
+                onValueChange={(val) => setFormData({ ...formData, paidBy: val })}
               >
-                <SelectTrigger id="paidBy">
-                  <SelectValue placeholder="Sélectionner un membre" />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sélectionner le payeur" />
                 </SelectTrigger>
                 <SelectContent>
                   {colocation?.members?.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
-                    </SelectItem>
+                    <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {formErrors.paidBy && <p className="text-sm text-red-500 mt-1">{formErrors.paidBy}</p>}
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="shared">Type de dépense</Label>
+              <div className="flex items-center gap-3">
+                <span className={`text-sm ${formData.shared === false ? "font-semibold text-[#0e141b]" : "text-[#4e7397]"}`}>
+                  Personnelle
+                </span>
+                <button
+                  type="button"
+                  id="shared"
+                  role="switch"
+                  aria-checked={formData.shared !== false}
+                  onClick={() => setFormData({ ...formData, shared: !formData.shared })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#4799eb] focus:ring-offset-2 ${
+                    formData.shared !== false ? "bg-[#4799eb]" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.shared !== false ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm ${formData.shared !== false ? "font-semibold text-[#0e141b]" : "text-[#4e7397]"}`}>
+                  Partagée
+                </span>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog} disabled={isSubmitting}>
@@ -747,27 +800,59 @@ export default function Finances() {
         </DialogContent>
       </Dialog>
 
-      {/* AlertDialog Confirmation Suppression */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette dépense ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. La dépense "{expenseToDelete?.title}" sera définitivement supprimée.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              disabled={isSubmitting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isSubmitting ? "Suppression..." : "Supprimer"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ConfirmDialog Confirmation Suppression */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Supprimer cette dépense ?"
+        description={`Cette action est irréversible. La dépense "${expenseToDelete?.title || ''}" sera définitivement supprimée.`}
+        onConfirm={confirmDelete}
+        confirmText="Supprimer"
+        loadingText="Suppression..."
+        variant="destructive"
+        isLoading={isSubmitting}
+      />
+
+      {/* Dialog Ajouter à la cagnotte */}
+      <Dialog open={isContribDialogOpen} onOpenChange={setIsContribDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter à la cagnotte</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleContribSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="contrib-amount">Montant (€)</Label>
+              <Input
+                id="contrib-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={contribAmount}
+                onChange={(e) => {
+                  setContribAmount(e.target.value);
+                  setContribError("");
+                }}
+                placeholder="0.00"
+                required
+              />
+              {contribError && <p className="text-sm text-red-500 mt-1">{contribError}</p>}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsContribDialogOpen(false)}
+                disabled={isContribSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isContribSubmitting}>
+                {isContribSubmitting ? "En cours..." : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

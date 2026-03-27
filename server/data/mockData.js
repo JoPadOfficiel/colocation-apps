@@ -1,11 +1,13 @@
-const colocation = {
-  id: 'coloc-1',
-  name: 'Colocation Jopad & Co',
-  invitationCode: 'COLO-7829-X',
-  totalFund: 245.50,
-  createdAt: '2025-09-01T10:00:00Z',
-  members: ['user-1', 'user-2', 'user-3'],
-};
+const colocations = [
+  {
+    id: 'coloc-1',
+    name: 'Colocation Jopad & Co',
+    invitationCode: 'COLO-7829-X',
+    totalFund: 245.50,
+    createdAt: '2025-09-01T10:00:00Z',
+    members: ['user-1', 'user-2', 'user-3'],
+  },
+];
 
 const users = [
   {
@@ -17,6 +19,8 @@ const users = [
     role: 'admin',
     colocationId: 'coloc-1',
     dietaryConstraints: [],
+    emailNotifications: true,
+    pushNotifications: true,
   },
   {
     id: 'user-2',
@@ -27,6 +31,8 @@ const users = [
     role: 'member',
     colocationId: 'coloc-1',
     dietaryConstraints: ['végétarienne'],
+    emailNotifications: true,
+    pushNotifications: true,
   },
   {
     id: 'user-3',
@@ -37,6 +43,8 @@ const users = [
     role: 'member',
     colocationId: 'coloc-1',
     dietaryConstraints: ['sans gluten'],
+    emailNotifications: true,
+    pushNotifications: true,
   },
 ];
 
@@ -112,6 +120,7 @@ const finances = [
     date: '2026-03-15T14:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-2',
@@ -121,6 +130,7 @@ const finances = [
     date: '2026-03-01T09:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-3',
@@ -130,6 +140,7 @@ const finances = [
     date: '2026-03-05T10:00:00Z',
     paidBy: 'user-2',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-4',
@@ -139,6 +150,7 @@ const finances = [
     date: '2026-03-10T16:30:00Z',
     paidBy: 'user-3',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-5',
@@ -148,6 +160,7 @@ const finances = [
     date: '2026-03-08T20:00:00Z',
     paidBy: 'user-2',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-6',
@@ -157,6 +170,7 @@ const finances = [
     date: '2026-03-03T08:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-7',
@@ -166,6 +180,7 @@ const finances = [
     date: '2026-03-12T11:00:00Z',
     paidBy: 'user-3',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-8',
@@ -175,6 +190,7 @@ const finances = [
     date: '2026-03-16T10:00:00Z',
     paidBy: 'user-2',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-9',
@@ -184,6 +200,7 @@ const finances = [
     date: '2026-03-07T09:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-10',
@@ -193,6 +210,7 @@ const finances = [
     date: '2026-03-14T19:30:00Z',
     paidBy: 'user-3',
     colocationId: 'coloc-1',
+    shared: true,
   },
   // Janvier 2026
   { id: 'fin-20', title: 'Courses Leclerc', amount: 67.30, type: 'shopping', paidBy: 'user-1', date: '2026-01-15T10:00:00Z', shared: true, colocationId: 'coloc-1' },
@@ -211,47 +229,57 @@ const finances = [
 const subscriptions = [
   {
     id: 'sub-1',
-    serviceName: 'Netflix',
+    nameService: 'Netflix',
     type: 'PREMIUM',
-    monthlyPrice: 15.99,
-    nextWithdrawalDate: '2026-04-05T00:00:00Z',
-    sharedPlaces: 3,
+    costMonthly: 15.99,
+    dateBilling: '05 Apr',
+    icon: 'movie',
+    placesLimit: 4,
+    placesUsed: 4,
     colocationId: 'coloc-1',
   },
   {
     id: 'sub-2',
-    serviceName: 'Orange Fibre',
+    nameService: 'Orange Fibre',
     type: 'FIBRE',
-    monthlyPrice: 39.99,
-    nextWithdrawalDate: '2026-04-03T00:00:00Z',
-    sharedPlaces: 3,
+    costMonthly: 39.99,
+    dateBilling: '03 Apr',
+    icon: 'router',
+    placesLimit: 3,
+    placesUsed: 3,
     colocationId: 'coloc-1',
   },
   {
     id: 'sub-3',
-    serviceName: 'Spotify',
+    nameService: 'Spotify',
     type: 'FAMILLE',
-    monthlyPrice: 17.99,
-    nextWithdrawalDate: '2026-04-10T00:00:00Z',
-    sharedPlaces: 3,
+    costMonthly: 17.99,
+    dateBilling: '10 Apr',
+    icon: 'audiotrack',
+    placesLimit: 6,
+    placesUsed: 3,
     colocationId: 'coloc-1',
   },
   {
     id: 'sub-4',
-    serviceName: 'Disney+',
+    nameService: 'Disney+',
     type: 'ANNUEL',
-    monthlyPrice: 8.99,
-    nextWithdrawalDate: '2026-04-15T00:00:00Z',
-    sharedPlaces: 3,
+    costMonthly: 8.99,
+    dateBilling: '15 Apr',
+    icon: 'stars',
+    placesLimit: 4,
+    placesUsed: 2,
     colocationId: 'coloc-1',
   },
   {
     id: 'sub-5',
-    serviceName: 'EDF',
+    nameService: 'EDF',
     type: 'FIXE',
-    monthlyPrice: 85.00,
-    nextWithdrawalDate: '2026-04-01T00:00:00Z',
-    sharedPlaces: 3,
+    costMonthly: 85.00,
+    dateBilling: '01 Apr',
+    icon: 'bolt',
+    placesLimit: null,
+    placesUsed: null,
     colocationId: 'coloc-1',
   },
 ];
@@ -264,6 +292,7 @@ const recipes = [
     portions: 3,
     ingredients: ['pâtes', 'lardons', 'oeufs', 'parmesan', 'poivre'],
     dietaryConstraints: [],
+    category: 'Plat',
     isFavorite: true,
     colocationId: 'coloc-1',
   },
@@ -274,6 +303,7 @@ const recipes = [
     portions: 4,
     ingredients: ['pâte brisée', 'lardons', 'oeufs', 'crème fraîche', 'gruyère'],
     dietaryConstraints: [],
+    category: 'Plat',
     isFavorite: false,
     colocationId: 'coloc-1',
   },
@@ -284,6 +314,7 @@ const recipes = [
     portions: 3,
     ingredients: ['salade romaine', 'poulet', 'croûtons', 'parmesan', 'sauce césar'],
     dietaryConstraints: [],
+    category: 'Plat',
     isFavorite: true,
     colocationId: 'coloc-1',
   },
@@ -294,6 +325,7 @@ const recipes = [
     portions: 4,
     ingredients: ['farine', 'oeufs', 'lait', 'beurre', 'sucre', 'levure'],
     dietaryConstraints: ['végétarien'],
+    category: 'Petit-déjeuner',
     isFavorite: false,
     colocationId: 'coloc-1',
   },
@@ -315,7 +347,7 @@ const shoppingList = [
 ];
 
 module.exports = {
-  colocation,
+  colocations,
   users,
   tasks,
   finances,

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "task-1",
+    "title": "Nettoyer la cuisine",
+    "description": "Faire la vaisselle et nettoyer les plans de travail",
+    "status": "Terminée",
+    "dueDate": "2026-03-18T18:00:00Z",
+    "assignedTo": "user-1",
+    "createdBy": "user-1",
+    "category": "Cuisine",
+    "recurrence": "weekly",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "task-2",
+    "title": "Passer l'aspirateur salon",
+    "description": "Aspirer le salon et le couloir",
+    "status": "À faire",
+    "dueDate": "2026-03-22T18:00:00Z",
+    "assignedTo": "user-3",
+    "createdBy": "user-1",
+    "category": "Salon",
+    "recurrence": "weekly",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "task-3",
+    "title": "Sortir les poubelles",
+    "description": "Poubelles jaunes et vertes",
+    "status": "À faire",
+    "dueDate": "2026-03-21T08:00:00Z",
+    "assignedTo": "user-3",
+    "createdBy": "user-2",
+    "category": "Extérieur",
+    "recurrence": "weekly",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "task-4",
+    "title": "Nettoyer la salle de bain",
+    "description": "Nettoyage complet : douche, lavabo, miroir",
+    "status": "En cours",
+    "dueDate": "2026-03-23T18:00:00Z",
+    "assignedTo": "user-1",
+    "createdBy": "user-3",
+    "category": "Salle de bain",
+    "recurrence": "monthly",
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "task-5",
+    "title": "Racheter du produit vaisselle",
+    "description": "Produit vaisselle et éponges",
+    "status": "Terminée",
+    "dueDate": "2026-03-17T12:00:00Z",
+    "assignedTo": "user-2",
+    "createdBy": "user-1",
+    "category": "Courses",
+    "recurrence": "none",
+    "colocationId": "coloc-1"
+  }
+]

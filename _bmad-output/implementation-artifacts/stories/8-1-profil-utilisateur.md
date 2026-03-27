@@ -3,7 +3,7 @@ epic: "Epic 8 : Reglages & Profil"
 storyId: "8.1"
 title: "Profil utilisateur"
 assignee: "Yohan"
-status: backlog
+status: review
 priority: medium
 frs: [FR44]
 ---
@@ -30,7 +30,7 @@ So that **mes informations sont a jour**.
 
 ### Endpoints API
 
-- `PUT /api/users/:id` — Body: `{ nom, email }`
+- `PUT /api/users/:id` — Body: `{ name, email }`
 
 ### Composants Utilises
 
@@ -58,9 +58,16 @@ So that **mes informations sont a jour**.
 
 ## Definition of Done
 
-- [ ] Tous les criteres d'acceptation passent
-- [ ] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
-- [ ] Utilise shadcn/ui (Card, Input, Button)
-- [ ] Champs pre-remplis avec donnees utilisateur
-- [ ] Mise a jour refletee dans l'AuthContext
-- [ ] Pas d'erreur console
+- [x] Tous les criteres d'acceptation passent
+- [x] Responsive : fonctionne sur desktop (>=768px) et mobile (<768px)
+- [x] Utilise shadcn/ui (Card, Input, Button)
+- [x] Champs pre-remplis avec donnees utilisateur
+- [x] Mise a jour refletee dans l'AuthContext
+- [x] Pas d'erreur console
+
+## Dev Agent Record
+
+- Implemented: `client/src/pages/Settings.jsx` — section Profil avec formulaire pre-rempli
+- Modified: `client/src/App.jsx` — remplace le mock Settings par le vrai composant
+- Pattern: appel `updateUser(user.id, {name, email})` via `api.js`, puis `setUser(updated)` + sessionStorage sync
+- No new dependencies required

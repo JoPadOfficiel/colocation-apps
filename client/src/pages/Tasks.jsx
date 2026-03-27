@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react"
-import { Plus, Pencil, Trash2, Check, Calendar, User, MoreHorizontal, Repeat } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { Plus, CheckCircle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -15,12 +14,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -29,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { fetchTasks, createTask, updateTask, deleteTask, fetchUsers } from "@/lib/api"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import TaskCard from "@/components/TaskCard"
 
 const CATEGORIES = ["Cuisine", "Salon", "Salle de bain", "Extérieur", "Courses", "Autre"]
 const RECURRENCES = [
@@ -39,7 +33,7 @@ const RECURRENCES = [
 ]
 
 export default function Tasks() {
-  const { user } = useAuth()
+  const { user, colocation } = useAuth()
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,18 +43,21 @@ export default function Tasks() {
   const [selectedTasks, setSelectedTasks] = useState([])
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
 
   // Form state
   const [form, setForm] = useState({
     title: "", description: "", category: "Autre", assignedTo: "", dueDate: "", recurrence: "none",
   })
+  const [formError, setFormError] = useState(null)
 
   useEffect(() => {
-    Promise.all([fetchTasks(), fetchUsers()])
+    Promise.all([fetchTasks(colocation?.id), fetchUsers()])
       .then(([t, u]) => { setTasks(t); setUsers(u) })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [colocation?.id])
 
   const userMap = {}
   users.forEach((u) => { userMap[u.id] = u.name })
@@ -68,12 +65,14 @@ export default function Tasks() {
   function resetForm() {
     setForm({ title: "", description: "", category: "Autre", assignedTo: user?.id || "", dueDate: "", recurrence: "none" })
     setEditingTask(null)
+    setFormError(null)
     setDialogOpen(false)
   }
 
   function openCreateDialog() {
     setForm({ title: "", description: "", category: "Autre", assignedTo: user?.id || "", dueDate: "", recurrence: "none" })
     setEditingTask(null)
+    setFormError(null)
     setDialogOpen(true)
   }
 
@@ -87,17 +86,23 @@ export default function Tasks() {
       recurrence: task.recurrence || "none",
     })
     setEditingTask(task)
+    setFormError(null)
     setDialogOpen(true)
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.title.trim()) return
+    if (!form.title.trim()) {
+      setFormError("Le titre de la tâche est requis")
+      return
+    }
+    setFormError(null)
     const payload = {
       ...form,
       dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : new Date().toISOString(),
       status: editingTask ? editingTask.status : "À faire",
       createdBy: user?.id,
+      colocationId: colocation?.id,
     }
     try {
       if (editingTask) {
@@ -115,12 +120,15 @@ export default function Tasks() {
 
   async function confirmDelete() {
     if (!taskToDelete) return
+    setIsDeleting(true)
     try {
       await deleteTask(taskToDelete)
       setTasks((prev) => prev.filter((t) => t.id !== taskToDelete))
     } catch (err) {
       console.error("Delete error:", err)
     } finally {
+      setIsDeleting(false)
+      setDeleteConfirmOpen(false)
       setTaskToDelete(null)
     }
   }
@@ -131,7 +139,8 @@ export default function Tasks() {
   }
 
   async function toggleStatus(task) {
-    const newStatus = task.status === "Terminée" ? "À faire" : "Terminée"
+    const cycle = { "À faire": "En cours", "En cours": "Terminée", "Terminée": "À faire" }
+    const newStatus = cycle[task.status] || "À faire"
     try {
       const updated = await updateTask(task.id, { status: newStatus })
       setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)))
@@ -157,6 +166,33 @@ export default function Tasks() {
     }
   }
 
+  async function bulkMarkDone() {
+    try {
+      const updates = await Promise.all(
+        selectedTasks.map((id) => updateTask(id, { status: "Terminée" }))
+      )
+      setTasks((prev) =>
+        prev.map((t) => {
+          const upd = updates.find((u) => u.id === t.id)
+          return upd || t
+        })
+      )
+      setSelectedTasks([])
+    } catch (err) {
+      console.error("Bulk mark done error:", err)
+    }
+  }
+
+  async function bulkDelete() {
+    try {
+      await Promise.all(selectedTasks.map((id) => deleteTask(id)))
+      setTasks((prev) => prev.filter((t) => !selectedTasks.includes(t.id)))
+      setSelectedTasks([])
+    } catch (err) {
+      console.error("Bulk delete error:", err)
+    }
+  }
+
   function toggleSelect(id) {
     setSelectedTasks((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -164,7 +200,17 @@ export default function Tasks() {
   }
 
   // Filtered tasks
-  const filtered = tasks.filter((t) => {
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // Correctly extract the numeric part of the ID (e.g., 'task-1' -> 1)
+    const getNumId = (id) => {
+      if (!id) return 0;
+      const match = id.match(/\d+/);
+      return match ? parseInt(match[0]) : 0;
+    };
+    return getNumId(b.id) - getNumId(a.id);
+  });
+
+  const filtered = sortedTasks.filter((t) => {
     if (filter.status !== "all" && t.status !== filter.status) return false
     if (filter.assignee !== "all" && t.assignedTo !== filter.assignee) return false
     
@@ -189,16 +235,18 @@ export default function Tasks() {
     return true
   })
 
-  const todo = filtered.filter((t) => t.status !== "Terminée")
+  const todo = filtered.filter((t) => t.status === "À faire")
+  const inProgress = filtered.filter((t) => t.status === "En cours")
   const done = filtered.filter((t) => t.status === "Terminée")
 
   // Stats per user
   const stats = {}
-  users.forEach((u) => { stats[u.id] = { total: 0, done: 0 } })
+  users.forEach((u) => { stats[u.id] = { total: 0, inProgress: 0, done: 0 } })
   tasks.forEach((t) => {
     if (stats[t.assignedTo]) {
       stats[t.assignedTo].total++
       if (t.status === "Terminée") stats[t.assignedTo].done++
+      if (t.status === "En cours") stats[t.assignedTo].inProgress++
     }
   })
 
@@ -254,7 +302,7 @@ export default function Tasks() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes les dates</SelectItem>
-            <SelectItem value="today">Aujourd'hui</SelectItem>
+            <SelectItem value="today">Aujourd&apos;hui</SelectItem>
             <SelectItem value="this-week">7 prochains jours</SelectItem>
             <SelectItem value="this-month">30 prochains jours</SelectItem>
           </SelectContent>
@@ -276,11 +324,26 @@ export default function Tasks() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="h-6 w-px bg-gray-200" />
+            <Button size="sm" variant="outline" onClick={bulkMarkDone}>
+              <CheckCircle className="h-4 w-4 mr-1" /> Terminée
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Supprimer
+            </Button>
+            <div className="h-6 w-px bg-gray-200" />
             <Button variant="ghost" size="sm" onClick={() => setSelectedTasks([])} className="text-gray-500 hover:text-gray-900">
               Annuler
             </Button>
           </div>
         )}
+        <ConfirmDialog
+          open={showBulkDeleteConfirm}
+          onConfirm={() => { setShowBulkDeleteConfirm(false); bulkDelete() }}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
+          title="Supprimer les tâches sélectionnées"
+          description={`Voulez-vous vraiment supprimer ${selectedTasks.length} tâche(s) ? Cette action est irréversible.`}
+        />
       </div>
 
       {/* Create/Edit Dialog */}
@@ -295,12 +358,15 @@ export default function Tasks() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-3">
-            <Input
-              placeholder="Titre de la tâche"
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required
-            />
+            <div>
+              <Input
+                placeholder="Titre de la tâche"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                required
+              />
+              {formError && <p className="text-sm text-red-500 mt-1">{formError}</p>}
+            </div>
             <Input
               placeholder="Description (optionnel)"
               value={form.description}
@@ -328,7 +394,9 @@ export default function Tasks() {
                   onValueChange={(val) => setForm((f) => ({ ...f, assignedTo: val }))}
                 >
                   <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Assigner à..." />
+                    <SelectValue>
+                      {form.assignedTo === 'none' ? 'Non assigné' : (users.find(u => u.id === form.assignedTo)?.name || form.assignedTo)}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Non assigné</SelectItem>
@@ -337,7 +405,7 @@ export default function Tasks() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500">Date d'échéance</label>
+                <label className="text-xs font-medium text-gray-500">Date d&apos;échéance</label>
                 <Input
                   type="date"
                   value={form.dueDate}
@@ -368,7 +436,7 @@ export default function Tasks() {
       </Dialog>
 
       {/* Task Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
             À Faire <Badge variant="secondary">{todo.length}</Badge>
@@ -387,6 +455,27 @@ export default function Tasks() {
               />
             ))}
             {todo.length === 0 && <p className="text-sm text-gray-400">Aucune tâche</p>}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            En cours <Badge variant="secondary" className="bg-orange-100 text-orange-700">{inProgress.length}</Badge>
+          </h2>
+          <div className="space-y-2">
+            {inProgress.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                userMap={userMap}
+                onToggle={() => toggleStatus(task)}
+                onEdit={() => startEdit(task)}
+                onDelete={() => promptDelete(task.id)}
+                selected={selectedTasks.includes(task.id)}
+                onSelect={() => toggleSelect(task.id)}
+              />
+            ))}
+            {inProgress.length === 0 && <p className="text-sm text-gray-400">Aucune tâche en cours</p>}
           </div>
         </div>
 
@@ -436,6 +525,7 @@ export default function Tasks() {
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>{userStats.total} assignées</span>
+                    {userStats.inProgress > 0 && <span className="text-orange-600 font-medium">{userStats.inProgress} en cours</span>}
                     <span className="text-green-600 font-medium">{userStats.done} terminées</span>
                   </div>
                 </div>
@@ -451,80 +541,11 @@ export default function Tasks() {
         description="Cette action est irréversible. La tâche sera définitivement supprimée."
         onConfirm={confirmDelete}
         confirmText="Supprimer"
+        loadingText="Suppression..."
         variant="destructive"
+        isLoading={isDeleting}
       />
     </div>
   )
 }
 
-function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelect }) {
-  const isDone = task.status === "Terminée"
-  const date = task.dueDate ? new Date(task.dueDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""
-
-  return (
-    <Card className={`group relative ring-offset-background transition-all hover:shadow-md ${selected ? "ring-2 ring-primary" : ""} ${isDone ? "opacity-60 bg-gray-50/50" : ""}`}>
-      <CardContent className="py-3 px-4">
-        <div className="flex items-start gap-3">
-          <Checkbox
-            checked={selected}
-            onCheckedChange={onSelect}
-            className="mt-1 shrink-0"
-            aria-label="Sélectionner"
-          />
-          <button onClick={onToggle} className="mt-0.5 shrink-0" aria-label="Changer statut">
-            {isDone ? (
-              <Check className="w-5 h-5 text-green-500" />
-            ) : (
-              <div className="w-5 h-5 rounded-full border-2 border-gray-300 hover:border-primary transition-colors cursor-pointer" />
-            )}
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-white/50">{task.category}</Badge>
-              {task.recurrence !== "none" && (
-                <Badge variant="secondary" className="text-[10px] font-normal gap-1">
-                  <Repeat className="w-2.5 h-2.5" />
-                  {task.recurrence === "daily" ? "Quotidien" : task.recurrence === "weekly" ? "Hebdo" : "Mensuel"}
-                </Badge>
-              )}
-            </div>
-            <p className={`text-sm font-semibold leading-snug ${isDone ? "line-through text-gray-400" : "text-gray-900"}`}>
-              {task.title}
-            </p>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
-              {date && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {date}
-                </span>
-              )}
-              {task.assignedTo && (
-                <span className="flex items-center gap-1">
-                  <User className="w-3 h-3" /> {userMap[task.assignedTo] || "?"}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="shrink-0 self-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm" className="h-8 w-8 hover:bg-gray-100 rounded-full">
-                    <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit}>
-                  <Pencil className="w-3 h-3" /> Modifier
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-                  <Trash2 className="w-3 h-3" /> Supprimer
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}

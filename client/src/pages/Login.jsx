@@ -5,14 +5,17 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import JoinConfirmDialog from "@/components/JoinConfirmDialog"
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, user, loading: authLoading } = useAuth()
+  const { login, user, colocation, loading: authLoading, updateColocation } = useAuth()
 
   useEffect(() => {
-    if (!authLoading && user) navigate("/dashboard", { replace: true })
-  }, [user, authLoading, navigate])
+    if (!authLoading && user) {
+      navigate(colocation ? "/dashboard" : "/onboarding", { replace: true })
+    }
+  }, [user, colocation, authLoading, navigate])
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -44,7 +47,7 @@ export default function Login() {
     try {
       const result = await login(email.trim().toLowerCase(), password)
       if (result.success) {
-        navigate("/dashboard", { replace: true })
+        navigate(result.needsOnboarding ? "/onboarding" : "/dashboard", { replace: true })
       } else {
         setError(result.error)
       }
@@ -56,6 +59,8 @@ export default function Login() {
   }
 
   const [joinError, setJoinError] = useState(null)
+  const [previewData, setPreviewData] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   async function handleJoin(e) {
     e.preventDefault()
@@ -64,13 +69,60 @@ export default function Login() {
       setJoinError("Veuillez entrer un code d'invitation")
       return
     }
-    setJoinError("Fonctionnalité disponible prochainement (Story 2.3)")
+    if (!user) {
+      setJoinError("Connectez-vous d'abord pour rejoindre une colocation")
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch("/api/colocation/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase() }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setJoinError(json.error || "Code invalide")
+        return
+      }
+      setPreviewData(json.data)
+      setDialogOpen(true)
+    } catch {
+      setJoinError("Erreur réseau, réessayez")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleConfirmJoin() {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/colocation/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase(), userId: user?.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setDialogOpen(false)
+        setJoinError(json.error || "Erreur lors de la jonction")
+        return
+      }
+      setDialogOpen(false)
+      if (updateColocation) updateColocation(json.data)
+      navigate("/dashboard", { replace: true })
+    } catch {
+      setDialogOpen(false)
+      setJoinError("Erreur réseau, réessayez")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="p-6">
-        <h1 className="text-2xl font-bold text-primary">ColocApp</h1>
+        <h1 className="text-2xl font-bold text-primary">LaBonneColoc</h1>
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 pb-12">
@@ -168,8 +220,8 @@ export default function Login() {
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
                   />
-                  <Button type="submit" variant="outline">
-                    Rejoindre
+                  <Button type="submit" variant="outline" disabled={loading}>
+                    Vérifier
                   </Button>
                 </div>
                 {joinError && (
@@ -180,9 +232,16 @@ export default function Login() {
           </Card>
         </div>
       </main>
+      <JoinConfirmDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        colocationData={previewData}
+        onConfirm={handleConfirmJoin}
+        loading={loading}
+      />
 
       <footer className="p-6 text-center text-sm text-gray-500">
-        © 2026 ColocApp. Tous droits réservés.
+        © 2026 LaBonneColoc. Tous droits réservés.
       </footer>
     </div>
   )
