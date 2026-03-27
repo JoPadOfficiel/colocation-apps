@@ -117,6 +117,13 @@ app.get('/api/colocation', (req, res) => {
   res.json({ data: enrichColocation(colocation) });
 });
 
+app.get('/api/colocation/:id', (req, res) => {
+  const colocList = Array.isArray(colocation) ? colocation : [colocation];
+  const coloc = colocList.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+  res.json({ data: enrichColocation(coloc) });
+});
+
 app.post('/api/colocation', (req, res) => {
   const { name } = req.body || {};
   if (!name) return res.status(400).json({ error: 'Nom requis' });
@@ -284,6 +291,99 @@ app.delete('/api/subscriptions/:id', (req, res) => {
   const [removed] = subscriptions.splice(idx, 1);
   db.save('subscriptions', subscriptions);
   res.json({ data: removed });
+});
+
+// Helper: resolve member ID from string or object format
+function resolveMemberId(m) {
+  return typeof m === 'object' && m !== null ? m.userId : m;
+}
+
+// Helper: count admins in a colocation
+function countAdmins(coloc, usersList) {
+  return (coloc.members || []).reduce((count, m) => {
+    const id = resolveMemberId(m);
+    // Role can be on the member object or on the user record
+    const memberRole = (typeof m === 'object' && m !== null && m.role) ? m.role : null;
+    const userRecord = usersList.find(u => u.id === id);
+    const role = memberRole || userRecord?.role || 'member';
+    return role === 'admin' ? count + 1 : count;
+  }, 0);
+}
+
+// PUT /api/colocation/:id/members/:userId — Change member role
+app.put('/api/colocation/:id/members/:userId', (req, res) => {
+  const { role } = req.body || {};
+  if (!role || !['admin', 'member'].includes(role)) {
+    return res.status(400).json({ error: 'Le rôle doit être "admin" ou "member"' });
+  }
+
+  // Support both single object and array of colocations
+  const colocList = Array.isArray(colocation) ? colocation : [colocation];
+  const coloc = colocList.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+
+  const { userId } = req.params;
+  const memberIdx = (coloc.members || []).findIndex(m => resolveMemberId(m) === userId);
+  if (memberIdx === -1) return res.status(404).json({ error: 'Membre non trouvé' });
+
+  // Protect last admin: cannot demote if only one admin remains
+  if (role === 'member') {
+    const adminCount = countAdmins(coloc, users);
+    const m = coloc.members[memberIdx];
+    const memberRole = (typeof m === 'object' && m !== null && m.role) ? m.role : null;
+    const userRecord = users.find(u => u.id === userId);
+    const currentRole = memberRole || userRecord?.role || 'member';
+    if (currentRole === 'admin' && adminCount <= 1) {
+      return res.status(400).json({ error: 'Impossible de rétrograder le dernier administrateur' });
+    }
+  }
+
+  // Update role: if member entry is an object, update its role; otherwise update the user record
+  const m = coloc.members[memberIdx];
+  if (typeof m === 'object' && m !== null) {
+    coloc.members[memberIdx] = { ...m, role };
+  } else {
+    // Role stored on user record
+    const userRecord = users.find(u => u.id === userId);
+    if (userRecord) {
+      userRecord.role = role;
+      db.save('users', users);
+    }
+  }
+  db.save('colocation', colocation);
+  res.json({ data: enrichColocation(coloc) });
+});
+
+// DELETE /api/colocation/:id/members/:userId — Remove member
+app.delete('/api/colocation/:id/members/:userId', (req, res) => {
+  const colocList = Array.isArray(colocation) ? colocation : [colocation];
+  const coloc = colocList.find(c => c.id === req.params.id);
+  if (!coloc) return res.status(404).json({ error: 'Colocation non trouvée' });
+
+  const { userId } = req.params;
+  const memberIdx = (coloc.members || []).findIndex(m => resolveMemberId(m) === userId);
+  if (memberIdx === -1) return res.status(404).json({ error: 'Membre non trouvé' });
+
+  // Protect last admin from being removed
+  const m = coloc.members[memberIdx];
+  const memberRole = (typeof m === 'object' && m !== null && m.role) ? m.role : null;
+  const userRecord = users.find(u => u.id === userId);
+  const currentRole = memberRole || userRecord?.role || 'member';
+  if (currentRole === 'admin' && countAdmins(coloc, users) <= 1) {
+    return res.status(400).json({ error: 'Impossible de supprimer le dernier administrateur' });
+  }
+
+  // Remove member from colocation
+  coloc.members.splice(memberIdx, 1);
+  db.save('colocation', colocation);
+
+  // Clear user's colocationId
+  if (userRecord) {
+    userRecord.colocationId = null;
+    db.save('users', users);
+  }
+
+  res.json({ data: enrichColocation(coloc) });
 });
 
 // Error handler

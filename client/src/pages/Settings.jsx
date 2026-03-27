@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing } from "lucide-react"
-import { updateUser, fetchUsers } from "@/lib/api"
+import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing, ChevronDown } from "lucide-react"
+import { updateUser, fetchUsers, updateMemberRole, removeMember, fetchColocationById } from "@/lib/api"
 
 function getInitials(name) {
   if (!name || typeof name !== "string") return "?"
@@ -19,7 +19,7 @@ function getInitials(name) {
 }
 
 export default function Settings() {
-  const { user, setUser, colocation } = useAuth()
+  const { user, setUser, colocation, updateColocation } = useAuth()
   const [nom, setNom] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
   const [saving, setSaving] = useState(false)
@@ -33,6 +33,12 @@ export default function Settings() {
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
   const copyTimeoutRef = useRef(null)
+
+  // Member action state
+  const [actionError, setActionError] = useState("")
+  const [actionLoading, setActionLoading] = useState(null) // userId currently being acted on
+  const [openMenuId, setOpenMenuId] = useState(null) // userId with open dropdown
+  const [confirmExclude, setConfirmExclude] = useState(null) // member to confirm exclusion
 
   // Notifications state
   const [emailNotifications, setEmailNotifications] = useState(true)
@@ -60,6 +66,54 @@ export default function Settings() {
       .catch(() => setMembersError(true))
       .finally(() => setMembersLoading(false))
   }, [isAdmin, colocation]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!openMenuId) return
+    function handleClick() { setOpenMenuId(null) }
+    document.addEventListener("click", handleClick)
+    return () => document.removeEventListener("click", handleClick)
+  }, [openMenuId])
+
+  async function refreshColocation() {
+    if (!colocation?.id) return
+    try {
+      const updated = await fetchColocationById(colocation.id)
+      updateColocation(updated)
+    } catch {
+      // non-critical — members list will be stale but not broken
+    }
+  }
+
+  async function handleRoleChange(memberId, newRole) {
+    setActionError("")
+    setActionLoading(memberId)
+    setOpenMenuId(null)
+    try {
+      await updateMemberRole(colocation.id, memberId, newRole)
+      await refreshColocation()
+    } catch (err) {
+      setActionError(err.message || "Erreur lors du changement de rôle")
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function handleExcludeConfirmed() {
+    if (!confirmExclude) return
+    const memberId = confirmExclude.id
+    setActionError("")
+    setActionLoading(memberId)
+    setConfirmExclude(null)
+    try {
+      await removeMember(colocation.id, memberId)
+      await refreshColocation()
+    } catch (err) {
+      setActionError(err.message || "Erreur lors de l'exclusion du membre")
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   // F8: nettoyage du setTimeout au démontage
   useEffect(() => {
@@ -225,27 +279,107 @@ export default function Settings() {
               <p className="text-sm font-medium text-[#0e141b] mb-2">Membres</p>
               {membersLoading && <p className="text-sm text-[#4e7397]">Chargement...</p>}
               {membersError && <p className="text-sm text-[#ef4444]">Impossible de charger les membres.</p>}
+              {actionError && <p className="text-sm text-[#ef4444] mb-2">{actionError}</p>}
               {!membersLoading && !membersError && (
                 <ul className="space-y-2">
-                  {members.map((m) => (
-                    <li key={m.id} className="flex items-center gap-3">
-                      <Avatar size="default">
-                        <AvatarFallback className="bg-[#eef6fd] text-[#4799eb] text-xs font-medium">
-                          {getInitials(m.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="flex-1 text-sm text-[#0e141b]">
-                        {m.name}
-                        {m.id === user?.id && <span className="text-[#4e7397] ml-1">(Vous)</span>}
-                      </span>
-                      <Badge variant={m.role === "admin" ? "default" : "secondary"}>
-                        {m.role === "admin" ? "Admin" : "Membre"}
-                      </Badge>
-                    </li>
-                  ))}
+                  {members.map((m) => {
+                    const isSelf = m.id === user?.id
+                    const isLoading = actionLoading === m.id
+                    const isMenuOpen = openMenuId === m.id
+                    return (
+                      <li key={m.id} className="flex items-center gap-3">
+                        <Avatar size="default">
+                          <AvatarFallback className="bg-[#eef6fd] text-[#4799eb] text-xs font-medium">
+                            {getInitials(m.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="flex-1 text-sm text-[#0e141b]">
+                          {m.name}
+                          {isSelf && <span className="text-[#4e7397] ml-1">(Vous)</span>}
+                        </span>
+                        <Badge variant={m.role === "admin" ? "default" : "secondary"}>
+                          {m.role === "admin" ? "Admin" : "Membre"}
+                        </Badge>
+                        {!isSelf && (
+                          <div className="relative">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenMenuId(isMenuOpen ? null : m.id)
+                              }}
+                              className="flex items-center gap-1 h-7 px-2 text-xs"
+                            >
+                              {isLoading ? "..." : <><ChevronDown size={14} /></>}
+                            </Button>
+                            {isMenuOpen && (
+                              <div
+                                className="absolute right-0 top-8 z-10 bg-white border border-gray-200 rounded-md shadow-lg min-w-[160px]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {m.role !== "admin" && (
+                                  <button
+                                    className="w-full text-left px-3 py-2 text-sm text-[#0e141b] hover:bg-gray-50"
+                                    onClick={() => handleRoleChange(m.id, "admin")}
+                                  >
+                                    Promouvoir Admin
+                                  </button>
+                                )}
+                                {m.role === "admin" && (
+                                  <button
+                                    className="w-full text-left px-3 py-2 text-sm text-[#0e141b] hover:bg-gray-50"
+                                    onClick={() => handleRoleChange(m.id, "member")}
+                                  >
+                                    Rétrograder Membre
+                                  </button>
+                                )}
+                                <button
+                                  className="w-full text-left px-3 py-2 text-sm text-[#ef4444] hover:bg-red-50 border-t border-gray-100"
+                                  onClick={() => { setConfirmExclude(m); setOpenMenuId(null) }}
+                                >
+                                  Exclure
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>
+
+            {/* Confirmation dialog for member exclusion */}
+            {confirmExclude && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+                  <h3 className="text-base font-semibold text-[#0e141b] mb-2">Exclure ce membre ?</h3>
+                  <p className="text-sm text-[#4e7397] mb-4">
+                    <strong>{confirmExclude.name}</strong> sera retiré de la colocation. Cette action est immédiate.
+                  </p>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setConfirmExclude(null)}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      type="button"
+                      className="bg-[#ef4444] hover:bg-[#dc2626] text-white"
+                      onClick={handleExcludeConfirmed}
+                    >
+                      Exclure
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
              <Button type="button" variant="outline" onClick={handleInvite} className="flex items-center gap-2">
                <UserPlus size={18} />

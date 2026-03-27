@@ -31,6 +31,23 @@ export function fetchColocation() {
   return request("/api/colocation")
 }
 
+export function fetchColocationById(id) {
+  return request(`/api/colocation/${id}`)
+}
+
+export function updateMemberRole(colocId, userId, role) {
+  return request(`/api/colocation/${colocId}/members/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify({ role }),
+  })
+}
+
+export function removeMember(colocId, userId) {
+  return request(`/api/colocation/${colocId}/members/${userId}`, {
+    method: "DELETE",
+  })
+}
+
 export async function getMembers(colocationData) {
   // If colocationData.members is already enriched (has 'name' property), use it
   if (colocationData?.members?.[0]?.name) {
