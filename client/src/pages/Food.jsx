@@ -614,10 +614,8 @@ export default function Food() {
                   <div className="flex justify-between items-start gap-2">
                     <h3 className="font-bold text-gray-900 leading-tight">{recipe.dishName}</h3>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" className="h-8 w-8 -mr-2">
-                          <MoreVertical className="w-4 h-4 text-gray-400" />
-                        </Button>
+                      <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 -mr-2 rounded-md hover:bg-accent">
+                        <MoreVertical className="w-4 h-4 text-gray-400" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => startEditRecipe(recipe)}>

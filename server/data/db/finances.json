@@ -100,26 +100,6 @@
     "shared": true
   },
   {
-    "id": "fin-101",
-    "colocationId": "coloc-1",
-    "title": "Test: Concert de Jazz",
-    "amount": 68.5,
-    "date": "2026-03-21",
-    "paidBy": "user-1",
-    "type": "expense",
-    "shared": true
-  },
-  {
-    "id": "fin-102",
-    "colocationId": "coloc-1",
-    "title": "Test Playwright - Dépense",
-    "amount": 50,
-    "date": "2026-03-26",
-    "paidBy": "user-1",
-    "type": "expense",
-    "shared": true
-  },
-  {
     "id": "fin-103",
     "colocationId": "coloc-1",
     "type": "contribution",
@@ -138,16 +118,6 @@
     "paidBy": "user-1"
   },
   {
-    "id": "fin-105",
-    "shared": true,
-    "title": "Achat Commun",
-    "amount": 20,
-    "date": "2026-03-27",
-    "paidBy": "user-1",
-    "type": "expense",
-    "colocationId": "coloc-1"
-  },
-  {
     "id": "fin-106",
     "colocationId": "coloc-1",
     "type": "contribution",
@@ -155,5 +125,105 @@
     "amount": 25,
     "date": "2026-03-27",
     "paidBy": "user-1"
+  },
+  {
+    "id": "fin-20",
+    "title": "Courses Leclerc",
+    "amount": 67.3,
+    "type": "shopping",
+    "paidBy": "user-1",
+    "date": "2026-01-15T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-21",
+    "title": "Électricité janvier",
+    "amount": 62.54,
+    "type": "utility",
+    "paidBy": "user-3",
+    "date": "2026-01-20T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-22",
+    "title": "Internet janvier",
+    "amount": 35.99,
+    "type": "utility",
+    "paidBy": "user-2",
+    "date": "2026-01-25T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-23",
+    "title": "Pizza soirée",
+    "amount": 28.5,
+    "type": "entertainment",
+    "paidBy": "user-1",
+    "date": "2026-01-28T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-24",
+    "title": "Produits ménage",
+    "amount": 15.8,
+    "type": "shopping",
+    "paidBy": "user-3",
+    "date": "2026-01-30T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-25",
+    "title": "Courses Carrefour",
+    "amount": 89.45,
+    "type": "shopping",
+    "paidBy": "user-2",
+    "date": "2026-02-05T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-26",
+    "title": "Électricité février",
+    "amount": 58.2,
+    "type": "utility",
+    "paidBy": "user-1",
+    "date": "2026-02-12T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-27",
+    "title": "Soirée resto",
+    "amount": 45,
+    "type": "entertainment",
+    "paidBy": "user-3",
+    "date": "2026-02-18T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-28",
+    "title": "Netflix",
+    "amount": 17.99,
+    "type": "subscription",
+    "paidBy": "user-2",
+    "date": "2026-02-20T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
+  },
+  {
+    "id": "fin-29",
+    "title": "Courses Lidl",
+    "amount": 52.3,
+    "type": "shopping",
+    "paidBy": "user-1",
+    "date": "2026-02-25T10:00:00Z",
+    "shared": true,
+    "colocationId": "coloc-1"
   }
 ]

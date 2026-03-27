@@ -41,7 +41,7 @@ function ExpenseChart({ finances }) {
   })
   const entries = Object.entries(byType).sort((a, b) => b[1] - a[1])
   const max = Math.max(...entries.map(([, v]) => v), 1)
-  const typeLabels = { shopping: "Courses", rent: "Loyer", utility: "Services", entertainment: "Sorties" }
+  const typeLabels = { shopping: "Courses", rent: "Loyer", utility: "Services", entertainment: "Sorties", food: "Alimentation", expense: "Dépense", subscription: "Abonnement", contribution: "Cagnotte" }
   const typeColors = { shopping: "bg-blue-500", rent: "bg-purple-500", utility: "bg-amber-500", entertainment: "bg-green-500" }
 
   return (

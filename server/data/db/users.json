@@ -1,7 +1,7 @@
 [
   {
     "id": "user-1",
-    "name": "Thomas Durand",
+    "name": "Thomas Updated",
     "email": "thomas@coloc.fr",
     "password": "password123",
     "profilePhoto": "",
@@ -15,7 +15,7 @@
     "email": "lea@coloc.fr",
     "password": "password123",
     "profilePhoto": "",
-    "role": "member",
+    "role": "admin",
     "colocationId": "coloc-1",
     "dietaryConstraints": [
       "végétarienne"
@@ -32,56 +32,5 @@
     "dietaryConstraints": [
       "sans gluten"
     ]
-  },
-  {
-    "id": "user-100",
-    "name": "Test User",
-    "email": "test@example.com",
-    "password": "password123",
-    "profilePhoto": "",
-    "role": "member",
-    "colocationId": "coloc-2",
-    "dietaryConstraints": [],
-    "emailNotifications": false
-  },
-  {
-    "id": "user-101",
-    "name": "Yohan Test",
-    "email": "yohan@test.fr",
-    "password": "password123",
-    "profilePhoto": "",
-    "role": "member",
-    "colocationId": "coloc-1",
-    "dietaryConstraints": []
-  },
-  {
-    "id": "user-102",
-    "name": "Test User",
-    "email": "test@test.fr",
-    "password": "password123",
-    "profilePhoto": "",
-    "role": "member",
-    "colocationId": "coloc-1",
-    "dietaryConstraints": []
-  },
-  {
-    "id": "user-103",
-    "name": "Final Test",
-    "email": "final@test.fr",
-    "password": "password123",
-    "profilePhoto": "",
-    "role": "member",
-    "colocationId": "coloc-1",
-    "dietaryConstraints": []
-  },
-  {
-    "id": "user-104",
-    "name": "Browser Tester",
-    "email": "browser-tester@test.com",
-    "password": "Password123!",
-    "profilePhoto": "",
-    "role": "member",
-    "colocationId": "coloc-1",
-    "dietaryConstraints": []
   }
 ]

@@ -58,53 +58,5 @@
     "category": "Courses",
     "recurrence": "none",
     "colocationId": "coloc-1"
-  },
-  {
-    "id": "task-100",
-    "colocationId": "coloc-1",
-    "title": "Test Task Sorting",
-    "description": "",
-    "category": "Autre",
-    "assignedTo": "user-2",
-    "dueDate": "2026-03-22T08:43:53.708Z",
-    "recurrence": "none",
-    "status": "À faire",
-    "createdBy": "user-100"
-  },
-  {
-    "id": "task-100",
-    "colocationId": "coloc-1",
-    "title": "Final Task Sort Test",
-    "description": "",
-    "category": "Autre",
-    "assignedTo": "user-1",
-    "dueDate": "2026-03-22T08:48:10.944Z",
-    "recurrence": "none",
-    "status": "À faire",
-    "createdBy": "user-100"
-  },
-  {
-    "id": "task-101",
-    "colocationId": "coloc-1",
-    "title": "Verification Task Order",
-    "description": "",
-    "category": "Autre",
-    "assignedTo": "user-1",
-    "dueDate": "2026-03-22T08:56:32.126Z",
-    "recurrence": "none",
-    "status": "À faire",
-    "createdBy": "user-1"
-  },
-  {
-    "id": "task-102",
-    "colocationId": "coloc-1",
-    "title": "Test Playwright - Nouvelle tâche",
-    "description": "",
-    "category": "Autre",
-    "assignedTo": "user-1",
-    "dueDate": "2026-03-26T09:46:36.257Z",
-    "recurrence": "none",
-    "status": "À faire",
-    "createdBy": "user-1"
   }
 ]

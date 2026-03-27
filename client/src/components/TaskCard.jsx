@@ -1,5 +1,4 @@
 import { Calendar, User, MoreHorizontal, Pencil, Trash2, Repeat } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -60,10 +59,8 @@ export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, se
           </div>
           <div className="shrink-0 self-center">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                </Button>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MoreHorizontal className="w-4 h-4 text-gray-400" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onEdit}>
