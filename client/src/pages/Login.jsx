@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import JoinConfirmDialog from "@/components/JoinConfirmDialog"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -58,6 +59,8 @@ export default function Login() {
   }
 
   const [joinError, setJoinError] = useState(null)
+  const [previewData, setPreviewData] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   async function handleJoin(e) {
     e.preventDefault()
@@ -66,21 +69,50 @@ export default function Login() {
       setJoinError("Veuillez entrer un code d'invitation")
       return
     }
+    if (!user) {
+      setJoinError("Connectez-vous d'abord pour rejoindre une colocation")
+      return
+    }
     setLoading(true)
     try {
-      const res = await fetch("/api/colocation/join", {
+      const res = await fetch("/api/colocation/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: joinCode.trim().toUpperCase(), userId: user?.id }),
+        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase() }),
       })
       const json = await res.json()
       if (!res.ok) {
         setJoinError(json.error || "Code invalide")
         return
       }
+      setPreviewData(json.data)
+      setDialogOpen(true)
+    } catch {
+      setJoinError("Erreur réseau, réessayez")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleConfirmJoin() {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/colocation/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase(), userId: user?.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setDialogOpen(false)
+        setJoinError(json.error || "Erreur lors de la jonction")
+        return
+      }
+      setDialogOpen(false)
       if (updateColocation) updateColocation(json.data)
       navigate("/dashboard", { replace: true })
     } catch {
+      setDialogOpen(false)
       setJoinError("Erreur réseau, réessayez")
     } finally {
       setLoading(false)
@@ -188,8 +220,8 @@ export default function Login() {
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
                   />
-                  <Button type="submit" variant="outline">
-                    Rejoindre
+                  <Button type="submit" variant="outline" disabled={loading}>
+                    Vérifier
                   </Button>
                 </div>
                 {joinError && (
@@ -200,6 +232,13 @@ export default function Login() {
           </Card>
         </div>
       </main>
+      <JoinConfirmDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        colocationData={previewData}
+        onConfirm={handleConfirmJoin}
+        loading={loading}
+      />
 
       <footer className="p-6 text-center text-sm text-gray-500">
         © 2026 ColocApp. Tous droits réservés.

@@ -138,10 +138,24 @@ app.get('/api/colocation/:id', (req, res) => {
   res.json({ data: enrichColocation(coloc) });
 });
 
+app.post('/api/colocation/preview', (req, res) => {
+  const { invitationCode } = req.body || {};
+  if (!invitationCode) return res.status(400).json({ error: 'invitationCode requis' });
+  const list = Array.isArray(colocation) ? colocation : [colocation];
+  const coloc = list.find(c => c.invitationCode === invitationCode);
+  if (!coloc) return res.status(404).json({ error: "Code d'invitation invalide" });
+  const members = coloc.members.map(memberId => {
+    const user = users.find(u => u.id === memberId);
+    return { name: user?.name || 'Inconnu', role: user?.role || 'member' };
+  });
+  res.json({ data: { id: coloc.id, name: coloc.name, memberCount: members.length, members } });
+});
+
 app.post('/api/colocation/join', (req, res) => {
-  const { code, userId } = req.body || {};
-  if (!code) return res.status(400).json({ error: 'Code requis' });
-  const coloc = colocations.find(c => c.invitationCode.toUpperCase() === code.toUpperCase());
+  const { code, invitationCode, userId } = req.body || {};
+  const resolvedCode = code || invitationCode;
+  if (!resolvedCode) return res.status(400).json({ error: 'Code requis' });
+  const coloc = colocations.find(c => c.invitationCode.toUpperCase() === resolvedCode.toUpperCase());
   if (!coloc) {
     return res.status(404).json({ error: 'Code d\'invitation invalide' });
   }
@@ -176,7 +190,6 @@ app.post('/api/colocation', (req, res) => {
   };
   colocations.push(newColoc);
   db.save('colocation', colocations);
-  // Update user's colocationId
   const creator = users.find(u => u.id === creatorId);
   if (creator) {
     creator.colocationId = newColoc.id;

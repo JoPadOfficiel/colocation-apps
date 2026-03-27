@@ -89,6 +89,10 @@ function AuthProvider({ children }) {
     }
   }
 
+  function joinColocation(colocationData) {
+    updateColocation(colocationData)
+  }
+
   function logout() {
     setUser(null)
     setColocation(null)
@@ -96,7 +100,7 @@ function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, colocation, loading, login, register, updateColocation, logout }}>
+    <AuthContext.Provider value={{ user, setUser, colocation, loading, login, register, updateColocation, joinColocation, logout }}>
       {children}
     </AuthContext.Provider>
   )
