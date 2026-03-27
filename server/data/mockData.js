@@ -194,6 +194,18 @@ const finances = [
     paidBy: 'user-3',
     colocationId: 'coloc-1',
   },
+  // Janvier 2026
+  { id: 'fin-20', title: 'Courses Leclerc', amount: 67.30, type: 'shopping', paidBy: 'user-1', date: '2026-01-15T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-21', title: 'Électricité janvier', amount: 62.54, type: 'utility', paidBy: 'user-3', date: '2026-01-20T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-22', title: 'Internet janvier', amount: 35.99, type: 'utility', paidBy: 'user-2', date: '2026-01-25T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-23', title: 'Pizza soirée', amount: 28.50, type: 'food', paidBy: 'user-1', date: '2026-01-28T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-24', title: 'Produits ménage', amount: 15.80, type: 'shopping', paidBy: 'user-3', date: '2026-01-30T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  // Février 2026
+  { id: 'fin-25', title: 'Courses Carrefour', amount: 89.45, type: 'shopping', paidBy: 'user-2', date: '2026-02-05T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-26', title: 'Électricité février', amount: 58.20, type: 'utility', paidBy: 'user-1', date: '2026-02-12T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-27', title: 'Soirée resto', amount: 45.00, type: 'food', paidBy: 'user-3', date: '2026-02-18T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-28', title: 'Netflix', amount: 17.99, type: 'subscription', paidBy: 'user-2', date: '2026-02-20T10:00:00Z', shared: true, colocationId: 'coloc-1' },
+  { id: 'fin-29', title: 'Courses Lidl', amount: 52.30, type: 'shopping', paidBy: 'user-1', date: '2026-02-25T10:00:00Z', shared: true, colocationId: 'coloc-1' },
 ];
 
 const subscriptions = [
