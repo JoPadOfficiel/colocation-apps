@@ -84,9 +84,28 @@ export default function Finances() {
     setMesDettes(balance < 0 ? Math.abs(balance) : 0);
     setOnMeDoit(balance > 0 ? balance : 0);
     
-    // Calcul de la tendance (pour l'instant simplifié)
-    // TODO Story 5.3: Calculer depuis l'historique réel
-    const tendanceCalculee = cagnotteActuelle * 0.18; // 18% de la cagnotte comme approximation
+    // Calcul de la tendance réelle : dépenses ce mois - dépenses mois dernier
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const thisYear = now.getFullYear();
+    const lastYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    const thisMonthTotal = financesData
+      .filter(f => {
+        const d = new Date(f.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear && f.type !== 'contribution';
+      })
+      .reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    const lastMonthTotal = financesData
+      .filter(f => {
+        const d = new Date(f.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastYear && f.type !== 'contribution';
+      })
+      .reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    const tendanceCalculee = thisMonthTotal - lastMonthTotal;
     setTendance(tendanceCalculee);
   }, [colocation, user]);
 
@@ -193,7 +212,9 @@ export default function Finances() {
       }
       
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString("fr-FR", { month: "long" });
+      const monthLabel = date.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" })
+        .replace('. ', ' ')
+        .replace(/\b\w/, c => c.toUpperCase());
       
       // Validation du montant
       const amount = Number(finance.amount) || 0;
