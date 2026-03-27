@@ -139,9 +139,11 @@ function RecentActivity({ finances, tasks, users }) {
 function BalanceTable({ finances, users }) {
   const totals = {}
   users.forEach((u) => { totals[u.id] = 0 })
-  const totalAll = finances.reduce((s, f) => s + f.amount, 0)
+  // Only shared expenses (not contributions) count for balance
+  const sharedExpenses = finances.filter(f => f.shared === true && f.type !== 'contribution')
+  const totalAll = sharedExpenses.reduce((s, f) => s + f.amount, 0)
   const perPerson = totalAll / (users.length || 1)
-  finances.forEach((f) => {
+  sharedExpenses.forEach((f) => {
     if (totals[f.paidBy] !== undefined) totals[f.paidBy] += f.amount
   })
 

@@ -112,6 +112,7 @@ const finances = [
     date: '2026-03-15T14:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-2',
@@ -121,6 +122,7 @@ const finances = [
     date: '2026-03-01T09:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-3',
@@ -130,6 +132,7 @@ const finances = [
     date: '2026-03-05T10:00:00Z',
     paidBy: 'user-2',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-4',
@@ -139,6 +142,7 @@ const finances = [
     date: '2026-03-10T16:30:00Z',
     paidBy: 'user-3',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-5',
@@ -148,6 +152,7 @@ const finances = [
     date: '2026-03-08T20:00:00Z',
     paidBy: 'user-2',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-6',
@@ -157,6 +162,7 @@ const finances = [
     date: '2026-03-03T08:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-7',
@@ -166,6 +172,7 @@ const finances = [
     date: '2026-03-12T11:00:00Z',
     paidBy: 'user-3',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-8',
@@ -175,6 +182,7 @@ const finances = [
     date: '2026-03-16T10:00:00Z',
     paidBy: 'user-2',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-9',
@@ -184,6 +192,7 @@ const finances = [
     date: '2026-03-07T09:00:00Z',
     paidBy: 'user-1',
     colocationId: 'coloc-1',
+    shared: true,
   },
   {
     id: 'fin-10',
@@ -193,6 +202,7 @@ const finances = [
     date: '2026-03-14T19:30:00Z',
     paidBy: 'user-3',
     colocationId: 'coloc-1',
+    shared: true,
   },
 ];
 

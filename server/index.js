@@ -180,7 +180,8 @@ app.get('/api/finances', (req, res) => {
 });
 
 app.post('/api/finances', (req, res) => {
-  const finance = { id: genId(finances, 'fin'), colocationId: 'coloc-1', ...req.body };
+  const shared = req.body.shared !== undefined ? req.body.shared : true;
+  const finance = { id: genId(finances, 'fin'), colocationId: 'coloc-1', shared, ...req.body };
   finances.push(finance);
   db.save('finances', finances);
   res.status(201).json({ data: finance });
@@ -189,7 +190,12 @@ app.post('/api/finances', (req, res) => {
 app.put('/api/finances/:id', (req, res) => {
   const idx = finances.findIndex((f) => f.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Dépense non trouvée' });
-  Object.assign(finances[idx], req.body);
+  const updates = { ...req.body };
+  if (updates.shared === undefined) {
+    // preserve existing shared value if not provided
+    updates.shared = finances[idx].shared !== undefined ? finances[idx].shared : true;
+  }
+  Object.assign(finances[idx], updates);
   db.save('finances', finances);
   res.json({ data: finances[idx] });
 });

@@ -41,14 +41,15 @@ export default function Finances() {
     title: "",
     amount: "",
     date: "",
-    paidBy: ""
+    paidBy: "",
+    shared: true
   });
   const [formErrors, setFormErrors] = useState({});
 
   // Fonction de calcul des métriques réutilisable (évite duplication)
   const calculateMetrics = useCallback((financesData) => {
     const nombreColocataires = colocation?.members?.length || 0;
-    
+
     // Protection contre division par zéro
     if (nombreColocataires === 0) {
       setCagnotte(colocation?.totalFund || 0);
@@ -57,10 +58,12 @@ export default function Finances() {
       setTendance(0);
       return;
     }
-    
-    const totalDepenses = financesData.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    // Only shared expenses (not contributions) count for balance
+    const sharedExpenses = financesData.filter(f => f.shared === true && f.type !== 'contribution');
+    const totalDepenses = sharedExpenses.reduce((sum, f) => sum + (f.amount || 0), 0);
     const partParPersonne = totalDepenses / nombreColocataires;
-    const mesDepenses = financesData
+    const mesDepenses = sharedExpenses
       .filter(f => f.paidBy === user?.id)
       .reduce((sum, f) => sum + (f.amount || 0), 0);
     
@@ -133,15 +136,18 @@ export default function Finances() {
   const calculateBalance = (financesData, members) => {
     if (!members || members.length === 0) return [];
 
+    // Only shared expenses (not contributions) count for balance
+    const sharedExpenses = financesData.filter(f => f.shared === true && f.type !== 'contribution');
+
     // Validation et conversion des montants
-    const totalDepenses = financesData.reduce((sum, f) => {
+    const totalDepenses = sharedExpenses.reduce((sum, f) => {
       const amount = Number(f.amount) || 0;
       return sum + amount;
     }, 0);
     const partParPersonne = Math.round((totalDepenses / members.length) * 100) / 100;
 
     const balances = members.map(member => {
-      const montantPaye = financesData
+      const montantPaye = sharedExpenses
         .filter(f => f.paidBy === member.id)
         .reduce((sum, f) => {
           const amount = Number(f.amount) || 0;
@@ -229,7 +235,8 @@ export default function Finances() {
         title: expense.title,
         amount: expense.amount.toString(),
         date: expense.date,
-        paidBy: expense.paidBy
+        paidBy: expense.paidBy,
+        shared: expense.shared !== undefined ? expense.shared : true
       });
     } else {
       setEditingExpense(null);
@@ -237,7 +244,8 @@ export default function Finances() {
         title: "",
         amount: "",
         date: new Date().toISOString().split('T')[0],
-        paidBy: user?.id || ""
+        paidBy: user?.id || "",
+        shared: true
       });
     }
     setFormErrors({});
@@ -247,7 +255,7 @@ export default function Finances() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingExpense(null);
-    setFormData({ title: "", amount: "", date: "", paidBy: "" });
+    setFormData({ title: "", amount: "", date: "", paidBy: "", shared: true });
     setFormErrors({});
   };
 
@@ -282,7 +290,8 @@ export default function Finances() {
         date: formData.date,
         paidBy: formData.paidBy,
         type: "expense",
-        colocationId: colocation.id
+        colocationId: colocation.id,
+        shared: formData.shared
       };
 
       if (editingExpense) {
@@ -457,6 +466,7 @@ export default function Finances() {
                   <TableHead>Date</TableHead>
                   <TableHead>Payé par</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Montant</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -464,7 +474,7 @@ export default function Finances() {
               <TableBody>
                 {paginatedExpenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-[#4e7397]">
+                    <TableCell colSpan={6} className="text-center text-[#4e7397]">
                       Aucune dépense enregistrée
                     </TableCell>
                   </TableRow>
@@ -474,6 +484,17 @@ export default function Finances() {
                       <TableCell>{formatDate(expense.date)}</TableCell>
                       <TableCell>{getUserName(expense.paidBy)}</TableCell>
                       <TableCell>{expense.title}</TableCell>
+                      <TableCell>
+                        {expense.shared === false ? (
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">
+                            Personnelle
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                            Partagée
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">{formatMontant(expense.amount)}</TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -669,6 +690,33 @@ export default function Finances() {
                 </SelectContent>
               </Select>
               {formErrors.paidBy && <p className="text-sm text-red-500 mt-1">{formErrors.paidBy}</p>}
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="shared">Type de dépense</Label>
+              <div className="flex items-center gap-3">
+                <span className={`text-sm ${formData.shared === false ? "font-semibold text-[#0e141b]" : "text-[#4e7397]"}`}>
+                  Personnelle
+                </span>
+                <button
+                  type="button"
+                  id="shared"
+                  role="switch"
+                  aria-checked={formData.shared !== false}
+                  onClick={() => setFormData({ ...formData, shared: !formData.shared })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#4799eb] focus:ring-offset-2 ${
+                    formData.shared !== false ? "bg-[#4799eb]" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.shared !== false ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm ${formData.shared !== false ? "font-semibold text-[#0e141b]" : "text-[#4e7397]"}`}>
+                  Partagée
+                </span>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog} disabled={isSubmitting}>
