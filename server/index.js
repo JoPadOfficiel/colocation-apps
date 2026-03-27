@@ -195,6 +195,7 @@ app.put('/api/colocation/:id', (req, res) => {
       amount: totalFund,
       date: new Date().toISOString().split('T')[0],
       paidBy: paidBy || null,
+      shared: false,
     };
     finances.push(contribution);
     db.save('finances', finances);

@@ -33,6 +33,14 @@ export function updateUser(id, data) {
   return request(`/api/users/${id}`, { method: "PUT", body: JSON.stringify(data) })
 }
 
+export function deleteUser(userId) {
+  return request(`/api/users/${userId}`, { method: "DELETE" })
+}
+
+export function deleteColocation(colocId, confirmName) {
+  return request(`/api/colocation/${colocId}`, { method: "DELETE", body: JSON.stringify({ confirmName }) })
+}
+
 export function fetchColocation() {
   return request("/api/colocation")
 }

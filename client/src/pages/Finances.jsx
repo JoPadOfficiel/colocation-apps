@@ -310,7 +310,7 @@ export default function Finances() {
       // Update cagnotte directly from server response (avoid stale closure)
       setCagnotte(updatedColoc.totalFund || 0);
       // Refetch finances to show new contribution entry in history
-      const data = await fetchFinances();
+      const data = await fetchFinances(colocation?.id);
       setFinances(data);
       setIsContribDialogOpen(false);
     } catch (err) {
