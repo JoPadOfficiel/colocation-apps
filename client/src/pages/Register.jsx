@@ -8,11 +8,13 @@ import { Card, CardContent } from "@/components/ui/card"
 
 export default function Register() {
   const navigate = useNavigate()
-  const { register, user, loading: authLoading } = useAuth()
+  const { register, user, colocation, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    if (!authLoading && user) navigate("/dashboard", { replace: true })
-  }, [user, authLoading, navigate])
+    if (!authLoading && user) {
+      navigate(colocation ? "/dashboard" : "/onboarding", { replace: true })
+    }
+  }, [user, colocation, authLoading, navigate])
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -41,7 +43,7 @@ export default function Register() {
     try {
       const result = await register(name.trim(), email.trim().toLowerCase(), password)
       if (result.success) {
-        navigate("/dashboard", { replace: true })
+        navigate(result.needsOnboarding ? "/onboarding" : "/dashboard", { replace: true })
       } else {
         setError(result.error)
       }
