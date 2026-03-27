@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus } from "lucide-react"
+import { Plus, CheckCircle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +44,7 @@ export default function Tasks() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
 
   // Form state
   const [form, setForm] = useState({
@@ -161,6 +162,33 @@ export default function Tasks() {
       setSelectedTasks([])
     } catch (err) {
       console.error("Bulk reassign error:", err)
+    }
+  }
+
+  async function bulkMarkDone() {
+    try {
+      const updates = await Promise.all(
+        selectedTasks.map((id) => updateTask(id, { status: "Terminée" }))
+      )
+      setTasks((prev) =>
+        prev.map((t) => {
+          const upd = updates.find((u) => u.id === t.id)
+          return upd || t
+        })
+      )
+      setSelectedTasks([])
+    } catch (err) {
+      console.error("Bulk mark done error:", err)
+    }
+  }
+
+  async function bulkDelete() {
+    try {
+      await Promise.all(selectedTasks.map((id) => deleteTask(id)))
+      setTasks((prev) => prev.filter((t) => !selectedTasks.includes(t.id)))
+      setSelectedTasks([])
+    } catch (err) {
+      console.error("Bulk delete error:", err)
     }
   }
 
@@ -293,11 +321,26 @@ export default function Tasks() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="h-6 w-px bg-gray-200" />
+            <Button size="sm" variant="outline" onClick={bulkMarkDone}>
+              <CheckCircle className="h-4 w-4 mr-1" /> Terminée
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Supprimer
+            </Button>
+            <div className="h-6 w-px bg-gray-200" />
             <Button variant="ghost" size="sm" onClick={() => setSelectedTasks([])} className="text-gray-500 hover:text-gray-900">
               Annuler
             </Button>
           </div>
         )}
+        <ConfirmDialog
+          open={showBulkDeleteConfirm}
+          onConfirm={() => { setShowBulkDeleteConfirm(false); bulkDelete() }}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
+          title="Supprimer les tâches sélectionnées"
+          description={`Voulez-vous vraiment supprimer ${selectedTasks.length} tâche(s) ? Cette action est irréversible.`}
+        />
       </div>
 
       {/* Create/Edit Dialog */}

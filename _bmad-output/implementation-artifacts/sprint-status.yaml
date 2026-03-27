@@ -152,7 +152,7 @@ development_status:
   # Epic 13: Tâches, Dashboard & Composants UI (Jopad) 🟡 MOYEN
   epic-13: in-progress
   13.1-correction-select-composants: done
-  13.2-bulk-actions-taches: ready-for-dev
+  13.2-bulk-actions-taches: done
   13.3-toggle-statut-complet: ready-for-dev
   13.4-rafraichissement-dashboard: ready-for-dev
   epic-13-retrospective: optional
