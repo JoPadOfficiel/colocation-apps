@@ -121,10 +121,37 @@ app.get('/api/users', (req, res) => {
 app.put('/api/users/:id', (req, res) => {
   const idx = users.findIndex((u) => u.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-  const { id, password, role, ...allowed } = req.body;
+  const user = users[idx];
+  const { id, password, role, oldPassword, newPassword, ...allowed } = req.body;
+  if (newPassword) {
+    if (!oldPassword) return res.status(400).json({ error: 'Ancien mot de passe requis' });
+    if (user.password !== oldPassword) return res.status(403).json({ error: 'Ancien mot de passe incorrect' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Le nouveau mot de passe doit faire au moins 8 caractères' });
+    user.password = newPassword;
+  }
   Object.assign(users[idx], allowed);
   db.save('users', users);
   res.json({ data: stripPassword(users[idx]) });
+});
+
+app.delete('/api/users/:id', (req, res) => {
+  const idx = users.findIndex((u) => u.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+  const user = users[idx];
+  // Remove user from their colocation's members array
+  if (user.colocationId) {
+    const coloc = colocations.find(c => c.id === user.colocationId);
+    if (coloc) {
+      coloc.members = coloc.members.filter(m => {
+        const id = typeof m === 'object' ? m.userId : m;
+        return id !== user.id;
+      });
+      db.save('colocation', colocations);
+    }
+  }
+  users.splice(idx, 1);
+  db.save('users', users);
+  res.json({ data: { message: 'Compte supprimé' } });
 });
 
 // Colocation
@@ -222,6 +249,35 @@ app.post('/api/colocation', (req, res) => {
     db.save('users', users);
   }
   res.status(201).json({ data: enrichColocation(newColoc) });
+});
+
+app.delete('/api/colocation/:id', (req, res) => {
+  const colocIdx = colocations.findIndex(c => c.id === req.params.id);
+  if (colocIdx === -1) return res.status(404).json({ error: 'Colocation non trouvée' });
+  const coloc = colocations[colocIdx];
+  const { confirmName } = req.body || {};
+  if (!confirmName || confirmName !== coloc.name) {
+    return res.status(400).json({ error: 'Le nom de confirmation ne correspond pas' });
+  }
+  const colocId = coloc.id;
+  // Cascade delete: remove all related data
+  tasks = tasks.filter(t => t.colocationId !== colocId);
+  finances = finances.filter(f => f.colocationId !== colocId);
+  subscriptions = subscriptions.filter(s => s.colocationId !== colocId);
+  recipes = recipes.filter(r => r.colocationId !== colocId);
+  shoppingList = shoppingList.filter(s => s.colocationId !== colocId);
+  db.save('tasks', tasks);
+  db.save('finances', finances);
+  db.save('subscriptions', subscriptions);
+  db.save('recipes', recipes);
+  db.save('shoppingList', shoppingList);
+  // Reset colocationId to null for all member users
+  users = users.map(u => u.colocationId === colocId ? { ...u, colocationId: null } : u);
+  db.save('users', users);
+  // Remove the colocation
+  colocations.splice(colocIdx, 1);
+  db.save('colocation', colocations);
+  res.json({ data: { message: 'Colocation supprimée' } });
 });
 
 // Tasks CRUD

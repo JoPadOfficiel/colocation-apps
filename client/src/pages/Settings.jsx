@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing } from "lucide-react"
-import { updateUser, fetchUsers } from "@/lib/api"
+import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing, Lock } from "lucide-react"
+import { updateUser as apiUpdateUser, fetchUsers } from "@/lib/api"
 
 function getInitials(name) {
   if (!name || typeof name !== "string") return "?"
@@ -19,12 +19,20 @@ function getInitials(name) {
 }
 
 export default function Settings() {
-  const { user, setUser, colocation } = useAuth()
+  const { user, updateUser, colocation } = useAuth()
   const [nom, setNom] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
+
+  // Password change state
+  const [oldPassword, setOldPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwSuccess, setPwSuccess] = useState(false)
+  const [pwError, setPwError] = useState("")
 
   const isAdmin = user?.role === "admin"
   const [members, setMembers] = useState([])
@@ -120,23 +128,41 @@ export default function Settings() {
     setSuccess(false)
     setError("")
     try {
-      const updated = await updateUser(user.id, { name: trimmedNom, email })
-      setUser(updated)
-      const saved = sessionStorage.getItem("colocapp_user")
-      if (saved) {
-        try {
-          const data = JSON.parse(saved)
-          data.user = updated
-          sessionStorage.setItem("colocapp_user", JSON.stringify(data))
-        } catch (err) {
-          console.error("Failed to update session storage", err)
-        }
-      }
+      const updated = await apiUpdateUser(user.id, { name: trimmedNom, email })
+      updateUser(updated)
       setSuccess(true)
     } catch (err) {
       setError(err.message || "Erreur lors de la mise à jour")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handlePasswordSubmit(e) {
+    e.preventDefault()
+    if (pwSaving || !user) return
+    setPwError("")
+    setPwSuccess(false)
+    if (newPassword !== confirmPassword) {
+      setPwError("Les mots de passe ne correspondent pas.")
+      return
+    }
+    if (newPassword.length < 8) {
+      setPwError("Le nouveau mot de passe doit faire au moins 8 caractères.")
+      return
+    }
+    setPwSaving(true)
+    try {
+      const updated = await apiUpdateUser(user.id, { oldPassword, newPassword })
+      updateUser(updated)
+      setPwSuccess(true)
+      setOldPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (err) {
+      setPwError(err.message || "Erreur lors du changement de mot de passe")
+    } finally {
+      setPwSaving(false)
     }
   }
 
@@ -186,6 +212,70 @@ export default function Settings() {
 
             <Button type="submit" disabled={saving} className="bg-[#4799eb] hover:bg-[#3b82f6] text-white">
               {saving ? "Enregistrement..." : "Mettre à jour"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-sm border border-gray-100 mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold text-[#0e141b] flex items-center gap-2">
+            <Lock size={18} className="text-[#4e7397]" />
+            Changer le mot de passe
+          </CardTitle>
+          <p className="text-sm text-[#4e7397]">Laissez vide si vous ne souhaitez pas modifier votre mot de passe</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-[#0e141b]" htmlFor="oldPassword">
+                Ancien mot de passe
+              </label>
+              <Input
+                id="oldPassword"
+                type="password"
+                value={oldPassword}
+                onChange={(e) => { setOldPassword(e.target.value); setPwSuccess(false) }}
+                autoComplete="current-password"
+                required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-[#0e141b]" htmlFor="newPassword">
+                Nouveau mot de passe
+              </label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => { setNewPassword(e.target.value); setPwSuccess(false) }}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+              <p className="text-xs text-[#4e7397]">Minimum 8 caractères</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-[#0e141b]" htmlFor="confirmPassword">
+                Confirmer le nouveau mot de passe
+              </label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setPwSuccess(false) }}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+
+            {pwError && <p className="text-sm text-[#ef4444]">{pwError}</p>}
+            {pwSuccess && <p className="text-sm text-[#22c55e]">Mot de passe mis à jour.</p>}
+
+            <Button type="submit" disabled={pwSaving} className="bg-[#4799eb] hover:bg-[#3b82f6] text-white">
+              {pwSaving ? "Enregistrement..." : "Changer le mot de passe"}
             </Button>
           </form>
         </CardContent>

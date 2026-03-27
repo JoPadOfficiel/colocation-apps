@@ -89,6 +89,20 @@ function AuthProvider({ children }) {
     }
   }
 
+  function updateUser(userData) {
+    setUser(userData)
+    const saved = sessionStorage.getItem("colocapp_user")
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        data.user = userData
+        sessionStorage.setItem("colocapp_user", JSON.stringify(data))
+      } catch (err) {
+        console.error("Failed to update user in session", err)
+      }
+    }
+  }
+
   function joinColocation(colocationData) {
     updateColocation(colocationData)
   }
@@ -100,7 +114,7 @@ function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, colocation, loading, login, register, updateColocation, joinColocation, logout }}>
+    <AuthContext.Provider value={{ user, setUser, colocation, loading, login, register, updateColocation, updateUser, joinColocation, logout }}>
       {children}
     </AuthContext.Provider>
   )
