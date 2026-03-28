@@ -34,6 +34,14 @@ npm run dev
 
 ---
 
+## Apercu
+
+| Dashboard | Taches | Finances |
+|-----------|--------|----------|
+| ![Dashboard](screenshots/dashboard.png) | ![Taches](screenshots/tasks.png) | ![Finances](screenshots/finances.png) |
+
+---
+
 ## Fonctionnalités
 
 - **Dashboard** : vue d'ensemble, solde cagnotte, tâches urgentes, activités récentes
