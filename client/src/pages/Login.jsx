@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Eye, EyeOff, Users } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import JoinConfirmDialog from "@/components/JoinConfirmDialog"
+import { Card, CardContent } from "@/components/ui/card"
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, user, colocation, loading: authLoading, updateColocation } = useAuth()
+  const { login, user, colocation, loading: authLoading } = useAuth()
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -20,7 +19,6 @@ export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [joinCode, setJoinCode] = useState("")
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -53,67 +51,6 @@ export default function Login() {
       }
     } catch {
       setError("Erreur réseau, réessayez")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const [joinError, setJoinError] = useState(null)
-  const [previewData, setPreviewData] = useState(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
-
-  async function handleJoin(e) {
-    e.preventDefault()
-    setJoinError(null)
-    if (!joinCode.trim()) {
-      setJoinError("Veuillez entrer un code d'invitation")
-      return
-    }
-    if (!user) {
-      setJoinError("Connectez-vous d'abord pour rejoindre une colocation")
-      return
-    }
-    setLoading(true)
-    try {
-      const res = await fetch("/api/colocation/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase() }),
-      })
-      const json = await res.json()
-      if (!res.ok) {
-        setJoinError(json.error || "Code invalide")
-        return
-      }
-      setPreviewData(json.data)
-      setDialogOpen(true)
-    } catch {
-      setJoinError("Erreur réseau, réessayez")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleConfirmJoin() {
-    setLoading(true)
-    try {
-      const res = await fetch("/api/colocation/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invitationCode: joinCode.trim().toUpperCase(), userId: user?.id }),
-      })
-      const json = await res.json()
-      if (!res.ok) {
-        setDialogOpen(false)
-        setJoinError(json.error || "Erreur lors de la jonction")
-        return
-      }
-      setDialogOpen(false)
-      if (updateColocation) updateColocation(json.data)
-      navigate("/dashboard", { replace: true })
-    } catch {
-      setDialogOpen(false)
-      setJoinError("Erreur réseau, réessayez")
     } finally {
       setLoading(false)
     }
@@ -205,40 +142,8 @@ export default function Login() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="w-5 h-5" />
-                Rejoindre une colocation existante
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleJoin} className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Code : COLO-XXXX-X"
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value)}
-                  />
-                  <Button type="submit" variant="outline" disabled={loading}>
-                    Vérifier
-                  </Button>
-                </div>
-                {joinError && (
-                  <p className="text-sm text-amber-600">{joinError}</p>
-                )}
-              </form>
-            </CardContent>
-          </Card>
         </div>
       </main>
-      <JoinConfirmDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        colocationData={previewData}
-        onConfirm={handleConfirmJoin}
-        loading={loading}
-      />
 
       <footer className="p-6 text-center text-sm text-gray-500">
         © 2026 LaBonneColoc. Tous droits réservés.
