@@ -32,7 +32,7 @@ describe('Settings Page (Epic 8)', () => {
     it('@P0 GIVEN a user on /settings WHEN the page loads THEN the profile form is displayed with name and email fields', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       expect(screen.getByRole('heading', { name: 'Réglages' })).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('Settings Page (Epic 8)', () => {
       updateUser.mockResolvedValueOnce(updatedUser);
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       const nameInput = screen.getByLabelText(/nom complet/i);
@@ -67,7 +67,7 @@ describe('Settings Page (Epic 8)', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       const nameInput = screen.getByLabelText(/nom complet/i);
@@ -87,7 +87,7 @@ describe('Settings Page (Epic 8)', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       expect(screen.getByText('Ma Colocation')).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('Settings Page (Epic 8)', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       expect(screen.getByText("Code d'invitation")).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe('Settings Page (Epic 8)', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       await waitFor(() => {
@@ -122,7 +122,7 @@ describe('Settings Page (Epic 8)', () => {
       const memberUser = { id: 'u2', name: 'Yohan', email: 'yohan@test.com', role: 'member' };
 
       render(<Settings />, {
-        authValue: { user: memberUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: memberUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       expect(screen.queryByText('Ma Colocation')).not.toBeInTheDocument();
@@ -134,7 +134,7 @@ describe('Settings Page (Epic 8)', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       expect(screen.getByText('Notifications')).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe('Settings Page (Epic 8)', () => {
       const mockUser = { id: 'u1', name: 'Jopad', email: 'jopad@test.com', role: 'admin' };
 
       render(<Settings />, {
-        authValue: { user: mockUser, setUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
+        authValue: { user: mockUser, updateUser: mockSetUser, login: vi.fn(), logout: vi.fn(), loading: false, colocation: mockColocation },
       });
 
       expect(screen.getByText('Supprimer le compte')).toBeInTheDocument();

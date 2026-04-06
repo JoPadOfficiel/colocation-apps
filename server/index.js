@@ -171,9 +171,11 @@ app.post('/api/colocation/preview', (req, res) => {
   const list = colocations;
   const coloc = list.find(c => c.invitationCode === invitationCode);
   if (!coloc) return res.status(404).json({ error: "Code d'invitation invalide" });
-  const members = coloc.members.map(memberId => {
-    const user = users.find(u => u.id === memberId);
-    return { name: user?.name || 'Inconnu', role: user?.role || 'member' };
+  const members = coloc.members.map(m => {
+    const id = typeof m === 'object' ? m.userId : m;
+    const memberRole = (typeof m === 'object' && m.role) ? m.role : null;
+    const user = users.find(u => u.id === id);
+    return { name: user?.name || 'Inconnu', role: memberRole || user?.role || 'member' };
   });
   res.json({ data: { id: coloc.id, name: coloc.name, memberCount: members.length, members } });
 });
@@ -290,6 +292,10 @@ app.get('/api/tasks', (req, res) => {
 });
 
 app.post('/api/tasks', (req, res) => {
+  const { colocationId, title } = req.body || {};
+  if (!colocationId || !title) {
+    return res.status(400).json({ error: 'colocationId et title requis' });
+  }
   const now = new Date().toISOString();
   const task = { id: genId(tasks, 'task'), ...req.body, createdAt: now, updatedAt: now };
   tasks.push(task);

@@ -47,13 +47,15 @@ describe('Login Page (Epic 2 - Story 2.1)', () => {
     expect(screen.getByText('Créer un compte')).toBeInTheDocument();
   });
 
-  it('@P0 GIVEN the login page WHEN it loads THEN a "Rejoindre une colocation existante" section is visible', () => {
+  it('@P0 GIVEN the login page WHEN it loads THEN the login form is the only authentication method visible', () => {
     render(<Login />, {
       authValue: { user: null, login: mockLogin, logout: vi.fn(), loading: false },
     });
 
-    expect(screen.getByText('Rejoindre une colocation existante')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /rejoindre/i })).toBeInTheDocument();
+    // The join colocation section was removed from the login page
+    expect(screen.queryByText('Rejoindre une colocation existante')).not.toBeInTheDocument();
+    // Only the login form should be present
+    expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
   });
 
   it('@P0 GIVEN a user with valid credentials WHEN they submit the form THEN login is called and user is redirected', async () => {

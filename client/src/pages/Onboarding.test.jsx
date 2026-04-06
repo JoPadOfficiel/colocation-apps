@@ -50,7 +50,13 @@ describe('Onboarding Page', () => {
     })
   })
 
-  it('@P0 GIVEN the join mode WHEN entering a valid code THEN it should navigate to dashboard', async () => {
+  it('@P0 GIVEN the join mode WHEN entering a valid code THEN it should show preview and allow joining', async () => {
+    // First call: preview returns colocation info
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { id: '1', name: 'My Home', memberCount: 2, members: [] } })
+    })
+    // Second call: actual join
     fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: { id: '1', name: 'My Home' } })
@@ -60,7 +66,14 @@ describe('Onboarding Page', () => {
 
     fireEvent.click(screen.getByText(/Rejoindre une colocation/i))
     fireEvent.change(screen.getByLabelText(/Code d'invitation/i), { target: { value: 'COLO-1234-A' } })
-    fireEvent.click(screen.getByRole('button', { name: /Rejoindre/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Vérifier le code/i }))
+
+    // Wait for preview dialog to appear and confirm
+    await waitFor(() => {
+      expect(screen.getByText(/My Home/i)).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Confirmer et rejoindre/i }))
 
     await waitFor(() => {
       expect(mockUpdateColocation).toHaveBeenCalledWith({ id: '1', name: 'My Home' })

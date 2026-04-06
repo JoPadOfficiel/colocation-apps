@@ -100,33 +100,6 @@
     "shared": true
   },
   {
-    "id": "fin-103",
-    "colocationId": "coloc-1",
-    "type": "contribution",
-    "title": "Contribution à la cagnotte",
-    "amount": 10,
-    "date": "2026-03-27",
-    "paidBy": "user-1"
-  },
-  {
-    "id": "fin-104",
-    "colocationId": "coloc-1",
-    "type": "contribution",
-    "title": "Contribution à la cagnotte",
-    "amount": 50,
-    "date": "2026-03-27",
-    "paidBy": "user-1"
-  },
-  {
-    "id": "fin-106",
-    "colocationId": "coloc-1",
-    "type": "contribution",
-    "title": "Contribution à la cagnotte",
-    "amount": 25,
-    "date": "2026-03-27",
-    "paidBy": "user-1"
-  },
-  {
     "id": "fin-20",
     "title": "Courses Leclerc",
     "amount": 67.3,
@@ -160,7 +133,7 @@
     "id": "fin-23",
     "title": "Pizza soirée",
     "amount": 28.5,
-    "type": "entertainment",
+    "type": "food",
     "paidBy": "user-1",
     "date": "2026-01-28T10:00:00Z",
     "shared": true,
@@ -200,7 +173,7 @@
     "id": "fin-27",
     "title": "Soirée resto",
     "amount": 45,
-    "type": "entertainment",
+    "type": "food",
     "paidBy": "user-3",
     "date": "2026-02-18T10:00:00Z",
     "shared": true,

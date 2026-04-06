@@ -33,7 +33,7 @@ describe('Dashboard Page', () => {
 
   const authValue = {
     user: { name: 'John Doe' },
-    colocation: { totalFund: 1000 },
+    colocation: { id: 'coloc-1', totalFund: 1000 },
     loading: false
   }
 
@@ -62,7 +62,7 @@ describe('Dashboard Page', () => {
       expect(screen.getByText(/1 urgente/i)).toBeInTheDocument() // Task widget
       expect(screen.getByText(/1 article/i)).toBeInTheDocument() // Food widget
       expect(screen.getByText(/1 actif/i)).toBeInTheDocument() // Subscriptions widget
-      expect(screen.getByText(/Dépenses par catégorie/i)).toBeInTheDocument()
+      expect(screen.getByText(/Dépenses par mois/i)).toBeInTheDocument()
       expect(screen.getByText(/Activités récentes/i)).toBeInTheDocument()
     })
   })
