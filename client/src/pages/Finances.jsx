@@ -751,7 +751,9 @@ export default function Finances() {
                 onValueChange={(val) => setFormData({ ...formData, paidBy: val })}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner le payeur" />
+                  <SelectValue placeholder="Sélectionner le payeur">
+                    {colocation?.members?.find(m => m.id === formData.paidBy)?.name || "Sélectionner le payeur"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {colocation?.members?.map(member => (

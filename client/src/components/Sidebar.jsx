@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, CheckSquare, Utensils, CreditCard, Settings, LogOut, User, RefreshCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
@@ -39,7 +40,10 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg hover:bg-gray-50 mb-2">
+        <div
+          className="flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg hover:bg-gray-50 mb-2"
+          onClick={() => navigate('/settings')}
+        >
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
             <User className="w-4 h-4" />
           </div>

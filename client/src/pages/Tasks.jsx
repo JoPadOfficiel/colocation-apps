@@ -149,6 +149,38 @@ export default function Tasks() {
     }
   }
 
+  async function changeStatus(task, newStatus) {
+    try {
+      const updated = await updateTask(task.id, { status: newStatus })
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)))
+    } catch (err) {
+      console.error("Status change error:", err)
+    }
+  }
+
+  // Drag and drop handlers
+  const [dragOverColumn, setDragOverColumn] = useState(null)
+
+  function handleDragOver(e, status) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    setDragOverColumn(status)
+  }
+
+  function handleDragLeave() {
+    setDragOverColumn(null)
+  }
+
+  async function handleDrop(e, targetStatus) {
+    e.preventDefault()
+    setDragOverColumn(null)
+    const taskId = e.dataTransfer.getData("text/plain")
+    const task = tasks.find(t => t.id === taskId)
+    if (task && task.status !== targetStatus) {
+      await changeStatus(task, targetStatus)
+    }
+  }
+
   async function bulkReassign(targetUserId) {
     try {
       const updates = await Promise.all(
@@ -394,8 +426,8 @@ export default function Tasks() {
                   onValueChange={(val) => setForm((f) => ({ ...f, assignedTo: val }))}
                 >
                   <SelectTrigger className="w-full bg-white">
-                    <SelectValue>
-                      {form.assignedTo === 'none' ? 'Non assigné' : (users.find(u => u.id === form.assignedTo)?.name || form.assignedTo)}
+                    <SelectValue placeholder="Non assigné">
+                      {form.assignedTo === 'none' || !form.assignedTo ? 'Non assigné' : (users.find(u => u.id === form.assignedTo)?.name || 'Non assigné')}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -437,68 +469,39 @@ export default function Tasks() {
 
       {/* Task Columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
-            À Faire <Badge variant="secondary">{todo.length}</Badge>
-          </h2>
-          <div className="space-y-2">
-            {todo.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                userMap={userMap}
-                onToggle={() => toggleStatus(task)}
-                onEdit={() => startEdit(task)}
-                onDelete={() => promptDelete(task.id)}
-                selected={selectedTasks.includes(task.id)}
-                onSelect={() => toggleSelect(task.id)}
-              />
-            ))}
-            {todo.length === 0 && <p className="text-sm text-gray-400">Aucune tâche</p>}
+        {[
+          { status: "À faire", label: "À Faire", items: todo, badgeClass: "", emptyText: "Aucune tâche" },
+          { status: "En cours", label: "En cours", items: inProgress, badgeClass: "bg-orange-100 text-orange-700", emptyText: "Aucune tâche en cours" },
+          { status: "Terminée", label: "Terminées", items: done, badgeClass: "", emptyText: "Aucune tâche terminée" },
+        ].map(col => (
+          <div
+            key={col.status}
+            onDragOver={(e) => handleDragOver(e, col.status)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, col.status)}
+            className={`min-h-[120px] rounded-lg transition-colors ${dragOverColumn === col.status ? "bg-primary/5 ring-2 ring-primary/20 ring-dashed" : ""}`}
+          >
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              {col.label} <Badge variant="secondary" className={col.badgeClass}>{col.items.length}</Badge>
+            </h2>
+            <div className="space-y-2">
+              {col.items.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  userMap={userMap}
+                  onToggle={() => toggleStatus(task)}
+                  onEdit={() => startEdit(task)}
+                  onDelete={() => promptDelete(task.id)}
+                  onStatusChange={changeStatus}
+                  selected={selectedTasks.includes(task.id)}
+                  onSelect={() => toggleSelect(task.id)}
+                />
+              ))}
+              {col.items.length === 0 && <p className="text-sm text-gray-400 p-4">{col.emptyText}</p>}
+            </div>
           </div>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
-            En cours <Badge variant="secondary" className="bg-orange-100 text-orange-700">{inProgress.length}</Badge>
-          </h2>
-          <div className="space-y-2">
-            {inProgress.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                userMap={userMap}
-                onToggle={() => toggleStatus(task)}
-                onEdit={() => startEdit(task)}
-                onDelete={() => promptDelete(task.id)}
-                selected={selectedTasks.includes(task.id)}
-                onSelect={() => toggleSelect(task.id)}
-              />
-            ))}
-            {inProgress.length === 0 && <p className="text-sm text-gray-400">Aucune tâche en cours</p>}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
-            Terminées <Badge variant="secondary">{done.length}</Badge>
-          </h2>
-          <div className="space-y-2">
-            {done.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                userMap={userMap}
-                onToggle={() => toggleStatus(task)}
-                onEdit={() => startEdit(task)}
-                onDelete={() => promptDelete(task.id)}
-                selected={selectedTasks.includes(task.id)}
-                onSelect={() => toggleSelect(task.id)}
-              />
-            ))}
-            {done.length === 0 && <p className="text-sm text-gray-400">Aucune tâche terminée</p>}
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Stats */}

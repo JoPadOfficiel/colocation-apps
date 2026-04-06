@@ -66,6 +66,10 @@ export function removeMember(colocId, userId) {
   })
 }
 
+export function leaveColocation(colocId, userId) {
+  return removeMember(colocId, userId)
+}
+
 export async function getMembers(colocationData) {
   // If colocationData.members is already enriched (has 'name' property), use it
   if (colocationData?.members?.[0]?.name) {

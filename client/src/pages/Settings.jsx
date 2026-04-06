@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing, Lock, Trash2, AlertTriangle, ChevronDown } from "lucide-react"
-import { updateUser as apiUpdateUser, fetchUsers, deleteUser, deleteColocation, updateMemberRole, removeMember, fetchColocationById } from "@/lib/api"
+import { User, Mail, ShieldCheck, Copy, UserPlus, Bell, BellRing, Lock, Trash2, AlertTriangle, ChevronDown, LogOut } from "lucide-react"
+import { updateUser as apiUpdateUser, fetchUsers, deleteUser, deleteColocation, updateMemberRole, removeMember, fetchColocationById, leaveColocation } from "@/lib/api"
 
 function getInitials(name) {
   if (!name || typeof name !== "string") return "?"
@@ -64,6 +64,11 @@ export default function Settings() {
   const [actionLoading, setActionLoading] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
   const [confirmExclude, setConfirmExclude] = useState(null)
+
+  // Leave colocation state (non-admin)
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [leaveLoading, setLeaveLoading] = useState(false)
+  const [leaveError, setLeaveError] = useState("")
 
   // Load members from enriched colocation data or fetch separately
   useEffect(() => {
@@ -252,6 +257,20 @@ export default function Settings() {
       setPwError(err.message || "Erreur lors du changement de mot de passe")
     } finally {
       setPwSaving(false)
+    }
+  }
+
+  async function handleLeaveColocation() {
+    if (leaveLoading || !colocation || !user) return
+    setLeaveLoading(true)
+    setLeaveError("")
+    try {
+      await leaveColocation(colocation.id, user.id)
+      logout()
+      navigate("/login")
+    } catch (err) {
+      setLeaveError(err.message || "Erreur lors du départ de la colocation")
+      setLeaveLoading(false)
     }
   }
 
@@ -598,6 +617,68 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Quitter la colocation (non-admin only) */}
+      {!isAdmin && colocation && (
+        <Card className="shadow-sm border border-gray-100 mt-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#0e141b]">Quitter la colocation</p>
+                <p className="text-xs text-[#4e7397] mt-1">Vous serez retiré de la colocation et redirigé vers la connexion</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setLeaveError(""); setShowLeaveDialog(true) }}
+                className="flex items-center gap-2 text-[#ef4444] border-[#ef4444] hover:bg-red-50"
+              >
+                <LogOut size={16} />
+                Quitter
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Leave colocation confirmation dialog */}
+      {showLeaveDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle size={22} className="text-[#ef4444] shrink-0" />
+              <h2 className="text-lg font-semibold text-[#0e141b]">Quitter la colocation</h2>
+            </div>
+            <p className="text-sm text-[#4e7397] mb-2">
+              Vous allez quitter <strong>{colocation?.name}</strong>.
+            </p>
+            <p className="text-sm text-[#4e7397] mb-5">
+              Vous pourrez rejoindre à nouveau avec un code d&apos;invitation.
+            </p>
+            {leaveError && (
+              <p className="text-sm text-[#ef4444] mb-3">{leaveError}</p>
+            )}
+            <div className="flex gap-3 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowLeaveDialog(false)}
+                disabled={leaveLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                onClick={handleLeaveColocation}
+                disabled={leaveLoading}
+                className="bg-[#ef4444] hover:bg-red-600 text-white"
+              >
+                {leaveLoading ? "Départ..." : "Quitter la colocation"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6">
         <button

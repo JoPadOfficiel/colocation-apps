@@ -46,7 +46,9 @@
     "password": "password123",
     "profilePhoto": "",
     "role": "member",
-    "colocationId": null,
-    "dietaryConstraints": []
+    "colocationId": "coloc-1",
+    "dietaryConstraints": [],
+    "emailNotifications": true,
+    "pushNotifications": true
   }
 ]

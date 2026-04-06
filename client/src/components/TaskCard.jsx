@@ -1,4 +1,4 @@
-import { Calendar, User, MoreHorizontal, Pencil, Trash2, Repeat } from "lucide-react"
+import { Calendar, User, MoreHorizontal, Pencil, Trash2, Repeat, CircleDot, PlayCircle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -14,13 +15,34 @@ const STATUS_STYLES = {
   "En cours": { button: "bg-orange-100 border-orange-400 text-orange-600", dot: "bg-orange-400 scale-100" },
 }
 
-export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, selected, onSelect }) {
+const STATUS_ACTIONS = [
+  { status: "À faire", label: "Marquer À faire", icon: CircleDot, color: "text-gray-600" },
+  { status: "En cours", label: "Marquer En cours", icon: PlayCircle, color: "text-orange-600" },
+  { status: "Terminée", label: "Marquer Terminée", icon: CheckCircle2, color: "text-green-600" },
+]
+
+export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, onStatusChange, selected, onSelect }) {
   const isDone = task.status === "Terminée"
   const statusStyle = STATUS_STYLES[task.status] || { button: "border-gray-300 hover:border-primary/50 text-gray-300", dot: "bg-transparent scale-0" }
   const date = task.dueDate ? new Date(task.dueDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""
 
+  function handleDragStart(e) {
+    e.dataTransfer.setData("text/plain", task.id)
+    e.dataTransfer.effectAllowed = "move"
+    e.currentTarget.style.opacity = "0.5"
+  }
+
+  function handleDragEnd(e) {
+    e.currentTarget.style.opacity = "1"
+  }
+
   return (
-    <Card className={`group border transition-all duration-300 hover:shadow-md hover:border-gray-200 ${selected ? "ring-2 ring-primary ring-offset-2 border-primary" : "border-gray-100"}`}>
+    <Card
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={`group border transition-all duration-300 hover:shadow-md hover:border-gray-200 cursor-grab active:cursor-grabbing ${selected ? "ring-2 ring-primary ring-offset-2 border-primary" : "border-gray-100"}`}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           <div className="flex items-center gap-3 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
@@ -68,6 +90,16 @@ export default function TaskCard({ task, userMap, onToggle, onEdit, onDelete, se
                 <MoreHorizontal className="w-4 h-4 text-gray-400" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {STATUS_ACTIONS.filter(a => a.status !== task.status).map(action => (
+                  <DropdownMenuItem
+                    key={action.status}
+                    onClick={() => onStatusChange ? onStatusChange(task, action.status) : onToggle()}
+                    className={action.color}
+                  >
+                    <action.icon className="w-3 h-3 mr-2" /> {action.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onEdit}>
                   <Pencil className="w-3 h-3 mr-2" /> Modifier
                 </DropdownMenuItem>
